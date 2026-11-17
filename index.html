@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d4ed8">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Scout Panchina</title>
 <style>
 :root{--bg:#f4f5f7;--sf:#fff;--tx:#111827;--mu:#6b7280;--bd:#d9dce1;--ac:#2563eb;--ok:#15803d;--okb:#dcfce7;--er:#b91c1c;--erb:#fee2e2;--ne:#e5e7eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -22,7 +26,8 @@ header{padding:8px 10px;display:flex;flex-direction:column;gap:6px}
 #sc{display:flex;align-items:flex-start;gap:8px}.tm{display:inline-flex;flex-direction:column;align-items:center}.big small.us{color:var(--ac);font-weight:700}
 .er{flex:1;font-size:12px;line-height:1.5;color:var(--er);font-weight:600;padding-left:2px}.er b{font-size:15px}
 main{flex:1;overflow:auto;padding:0 10px 8px;display:flex;flex-direction:column;gap:8px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pl{padding:12px 8px;text-align:left;display:flex;align-items:center;gap:10px;min-height:58px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pl{padding:12px 8px;text-align:left;display:flex;align-items:center;gap:10px;min-height:58px}
 .pl b{font-size:28px;min-width:42px;text-align:center}
 .pl span{font-size:14px;font-weight:600;line-height:1.15}
 .pl em{display:block;font-style:normal;font-size:11px;color:var(--mu);font-weight:500}
@@ -188,14 +193,25 @@ const SCHEDE={scouting:["ID Azione","ID Partita","ID Atleta","Squadra","Categori
  Partite:["ID Partita","Data","Squadra","Avversario","Categoria","Casa/Fuori","Note","Risultato","Set1","Set2","Set3","Set4","Set5"],
  Atleti:["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie"],Impostazioni:["Voce","Valore"]};
 let TOK=null,TEXP=0,SHID=null;
+function saveTok(){try{localStorage.setItem("scoutTok",JSON.stringify({t:TOK,e:TEXP}))}catch(e){}}
+try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>Date.now()+60000){TOK=o.t;TEXP=o.e}}catch(e){}
+/* ritorno dall'accesso a tutta pagina: il token arriva nel frammento dell'indirizzo */
+(function(){const h=location.hash||"";if(h.indexOf("access_token=")<0)return;
+ const p=new URLSearchParams(h.slice(1));let st=null;try{st=sessionStorage.getItem("scoutOAuthState")}catch(e){}
+ if(p.get("access_token")&&(!st||p.get("state")===st)){TOK=p.get("access_token");TEXP=Date.now()+(+p.get("expires_in")||3600)*1000;saveTok()}
+ try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}})();
+function redirectLogin(){
+ const st=Math.random().toString(36).slice(2);try{sessionStorage.setItem("scoutOAuthState",st)}catch(e){}
+ const ru=location.origin+location.pathname.replace(/index\.html$/,"");
+ location.href="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:ru,response_type:"token",scope:SCOPES,state:st,include_granted_scopes:"true",prompt:"select_account"})}
 try{SHID=localStorage.getItem("scoutSheetId")}catch(e){}
 function auth(interactive){return new Promise((ok,ko)=>{
  if(TOK&&Date.now()<TEXP-60000)return ok(TOK);
  if(!(window.google&&google.accounts&&google.accounts.oauth2))return ko(new Error("Accesso Google non disponibile (rete?)"));
  if(CLIENT_ID.indexOf("INSERISCI")===0)return ko(new Error("Manca il Client ID Google nel file"));
  const tc=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:r=>{
-  if(r.error)return ko(new Error(r.error));TOK=r.access_token;TEXP=Date.now()+(r.expires_in||3600)*1000;ok(TOK)},
-  error_callback:e=>ko(new Error((e&&e.type)||"accesso annullato"))});
+  if(r.error)return ko(new Error(r.error));TOK=r.access_token;TEXP=Date.now()+(r.expires_in||3600)*1000;saveTok();ok(TOK)},
+  error_callback:e=>{const t=e&&e.type;if(t==="popup_failed_to_open"){redirectLogin();return}ko(new Error(t||"accesso annullato"))}});
  tc.requestAccessToken({prompt:interactive?"select_account":""})})}
 async function api(url,opt){
  const t=await auth(false);
@@ -334,7 +350,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v8 (web)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v9 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">Accedi con Google (consigliato)</button><div class="sm">Collega il tuo account: l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -1070,4 +1086,9 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 migPos();
 render();
 gs("config").then(c=>{const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat}).catch(()=>{}).then(()=>{if(!S.squadra||!S.cat)setupSheet();else{S.cats=cats();if(!S.onboarded&&ROSTER.length)S.onboarded=true;save();render();if(!S.onboarded)atlSetup()}});
+</script>
+<script>
+if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
+ window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})});
+}
 </script></body></html>

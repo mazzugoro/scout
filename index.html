@@ -157,7 +157,12 @@ main{min-height:0;overflow:hidden;position:relative}
 .mini[data-n="3"] button{font-size:clamp(11px,2.5vh,19px)!important}.mini[data-n="2"] button{font-size:clamp(12px,3vh,24px)!important}
 .grid.cv{grid-template-rows:1fr 1.2fr}
 .grid.cv .mini[data-n] button{font-size:clamp(10px,1.9vh,15px)!important}
-.av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto;margin-right:2px}.row .av{width:26px;height:26px;vertical-align:middle;margin-right:6px}.zc .av{width:22px;height:22px;vertical-align:middle;margin-right:3px}.cv .pl .av{width:32px;height:32px}</style></head><body>
+.av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto;margin-right:2px}.row .av{width:26px;height:26px;vertical-align:middle;margin-right:6px}.zc .av{width:22px;height:22px;vertical-align:middle;margin-right:3px}.cv .pl .av{width:32px;height:32px}.pl.ph{display:grid!important;grid-template-columns:auto 1fr;align-items:center;justify-items:start;column-gap:8px;row-gap:2px}
+.pl.ph .av{grid-column:1/-1;justify-self:center;width:42px;height:42px;margin:0}
+.tile .pl.ph,.cv .tile .pl.ph{flex:0 0 auto!important;min-height:0!important;padding:4px 8px!important}
+.zc .av{display:block;margin:0 auto 2px;width:26px;height:26px}
+h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
+</style></head><body>
 <header>
  <div style="display:flex;gap:6px"><button class="mi" id="mi" style="flex:1"></button><button class="mi" id="bView" style="padding:2px 12px"></button><button class="mi" id="bLeg" style="padding:2px 12px">?</button><button class="mi" id="bVis" style="padding:2px 12px">⚙</button><button class="mi" id="bGoo" style="padding:2px 10px">G</button><button id="bLock" style="display:none"></button></div>
  <div class="sets" id="sets"></div>
@@ -186,7 +191,7 @@ main{min-height:0;overflow:hidden;position:relative}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -353,7 +358,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v13 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v14 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -483,7 +488,7 @@ function miniHTML(p){const ps=S.pos[p.id],L=QA.map((q,i)=>[q,i]).filter(([q,i])=
 const av=p=>p&&p.photo?`<img class="av" src="${p.photo}" alt="">`:"";
 function resizePhoto(file,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const n=128,c=document.createElement("canvas");c.width=c.height=n;const m=Math.min(im.width,im.height);c.getContext("2d").drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,n,n);cb(c.toDataURL("image/jpeg",0.75))};im.src=r.result};r.readAsDataURL(file)}
 let PH;
-function tileHTML(p,zl,note,cls){return `<div class="tile ${cls||""} ${rcl(p.id)}"><button class="pl" data-p="${p.id}">${av(p)}<b>${p.num===""?"–":p.num}</b><span>${p.n}<em><span class="zl">${zl}</span> <strong style="color:var(--ac)">${S.pos[p.id]||""}</strong>${note?" · "+note:""}</em></span></button>${miniHTML(p)}</div>`}
+function tileHTML(p,zl,note,cls){return `<div class="tile ${cls||""} ${rcl(p.id)}"><button class="pl${p.photo?" ph":""}" data-p="${p.id}">${av(p)}<b>${p.num===""?"–":p.num}</b><span>${p.n}<em><span class="zl">${zl}</span> <strong style="color:var(--ac)">${S.pos[p.id]||""}</strong>${note?" · "+note:""}</em></span></button>${miniHTML(p)}</div>`}
 function courtHTML(){
  const zm=zmap(),by=s=>{const id=S.lineup.find(x=>S.pos[x]===s);return id?pid(id):null},lib=by("L");
  return [4,3,2,5,6,1].map(z=>{const s=zm[z];let p=by(s),note="";
@@ -714,7 +719,7 @@ function render(){
  {const ro=isRO();$("ro").style.display=ro?"flex":"none";$("ro").innerHTML=ro?`<div style="font-size:22px">👁 Sola lettura</div><div>Sta inserendo: ${E((LK&&LK.label)||"altro account")}</div><button class="g" id="rotake" style="padding:14px 22px;font-size:16px">Prendi il controllo</button>`:"";$("bLock").textContent=ro?"👁":(DB&&LK&&LK.holder===ME?"✎":"🔒")}
  $("lg").style.display=S.leg?"flex":"none";$("lg").innerHTML=S.leg?legStrip():"";
  $("bView").textContent=S.view==="c"?"▦ Lista":"▦ Campo";$("cc").style.display=S.view==="c"?"grid":"none";$("cc").innerHTML=S.view==="c"?ccHTML():"";$("court").className=S.view==="c"?"grid cv":"grid";
- $("court").innerHTML=S.view==="c"?courtHTML():ordL(ls).map(p=>!p?"<div></div>":`<div class="tile ${zoneOf(p.id)===1?"p1":""} ${rcl(p.id)}"><button class="pl" data-p="${p.id}">${av(p)}<b>${p.num===""?"–":p.num}</b><span>${p.n}<em><strong style="color:var(--ac)">${S.pos[p.id]||""}</strong> · ${p.ruolo}</em></span></button>${(()=>{const ps=S.pos[p.id],L=QA.map((q,i)=>[q,i]).filter(([q,i])=>qv(i)&&!(i===3&&zoneOf(p.id)!==1)&&i!==4&&!(ps==="L"&&i>1)&&!((ps==="C1"||ps==="C2")&&i===0));return `<div class="mini" data-n="${L.length}" style="grid-template-columns:repeat(${L.length},1fr)">${L.map(([q,i])=>`<button class="${i===4?"r dn":""}" data-qa="${i}" data-p="${p.id}">${q[0]}</button>`).join("")}</div>`})()}</div>`).join("");
+ $("court").innerHTML=S.view==="c"?courtHTML():ordL(ls).map(p=>!p?"<div></div>":`<div class="tile ${zoneOf(p.id)===1?"p1":""} ${rcl(p.id)}"><button class="pl${p.photo?" ph":""}" data-p="${p.id}">${av(p)}<b>${p.num===""?"–":p.num}</b><span>${p.n}<em><strong style="color:var(--ac)">${S.pos[p.id]||""}</strong> · ${p.ruolo}</em></span></button>${(()=>{const ps=S.pos[p.id],L=QA.map((q,i)=>[q,i]).filter(([q,i])=>qv(i)&&!(i===3&&zoneOf(p.id)!==1)&&i!==4&&!(ps==="L"&&i>1)&&!((ps==="C1"||ps==="C2")&&i===0));return `<div class="mini" data-n="${L.length}" style="grid-template-columns:repeat(${L.length},1fr)">${L.map(([q,i])=>`<button class="${i===4?"r dn":""}" data-qa="${i}" data-p="${p.id}">${q[0]}</button>`).join("")}</div>`})()}</div>`).join("");
  const l=S.rows[S.rows.length-1];
  $("lastTxt").textContent=l?`${l.nome} · ${l.f} · ${l.e}`:"Nessuna azione";
  save();

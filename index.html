@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -358,7 +358,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v16 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v17 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -1072,9 +1072,6 @@ function logSheet(){
  ${gooRow()}
  <button class="g cancel" id="ss">💾 Salva partita e invia</button>
  <button class="g cancel" id="sx">☁ Invia a Google Sheets (${S.rows.filter(r=>!(S.sent||{})[r.id]).length} da inviare)</button>
- <button class="g cancel" id="cp">Copia tutte le righe (da incollare nel foglio “scouting”)</button>
- <textarea id="ta" readonly>${tsv()}</textarea>
- <button class="g cancel" id="cm">Copia riga per il foglio “Partite”</button>
  <div class="sm">Backup: conserva questo testo per ripristinare in caso di problemi</div><textarea id="rb">${JSON.stringify(S).replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea>
  <button class="cancel" id="rr">Ripristina da backup</button>
  <button class="r cancel" id="rs">Azzera tutta la partita</button>
@@ -1082,9 +1079,7 @@ function logSheet(){
  <button class="cancel" data-x="1">Chiudi</button>`);
  
  $("sx").onclick=sendSheets;
- $("cm").onclick=async()=>{try{await navigator.clipboard.writeText(matchTsv());$("cm").textContent="Copiato ✓"}catch(e){$("cm").textContent="Copia non riuscita"}};
  $("rr").onclick=()=>{try{S=Object.assign(S,JSON.parse($("rb").value));if(S.roster&&S.roster.length)ROSTER=S.roster;migPos();render();$("rr").textContent="Ripristinato ✓"}catch(e){$("rr").textContent="Testo non valido"}};
- $("cp").onclick=async()=>{const t=tsv();try{await navigator.clipboard.writeText(t);$("cp").textContent="Copiato ✓"}catch(e){$("ta").select();$("cp").textContent="Seleziona il testo e copia a mano"}};
  $("ra").onclick=()=>{
   if(!$("ra").dataset.c){$("ra").dataset.c=1;$("ra").textContent="Tocca ancora per confermare (restano quelle in archivio)";return}
   S.matches={};S.rows=[];S.sent={};S.set=1;S.rot=1;S.partita=uid();S.avv="";S.data="";S.note="";S.cf="casa";if(DB)clearRemote();save();render();close();

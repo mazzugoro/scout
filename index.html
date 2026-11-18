@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -358,7 +358,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v15 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v16 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -377,6 +377,56 @@ function setupSheet(){
  }
 }
 function cats(){stash();return[...new Set([...(S.cats||[]),S.cat,...Object.values(S.matches).map(o=>o.cat)].map(c=>String(c||"").trim()).filter(Boolean))]}
+function catCount(c){stash();const m=Object.entries(S.matches||{}).filter(([k,o])=>o.cat===c&&((o.rows&&o.rows.length)||o.avv)).length;return{m,a:ROSTER.filter(p=>(p.cats||[]).includes(c)).length}}
+function renCat(o,n){
+ n=String(n||"").trim();if(!n||n===o)return false;
+ S.cats=[...new Set((S.cats||[]).map(c=>c===o?n:c))];
+ if(S.cat===o)S.cat=n;if(ST.cat===o)ST.cat=n;
+ Object.values(S.matches||{}).forEach(m=>{if(m.cat===o)m.cat=n});
+ ROSTER.forEach(p=>{if(p.cats&&p.cats.includes(o))p.cats=[...new Set(p.cats.map(c=>c===o?n:c))]});
+ return true}
+async function renSheet(o,n){
+ const mcp=await claude.use("mcp");let k=0;
+ for(const rg of ["Partite!E2:E2000","scouting!E2:E50000","Atleti!F2:F300"]){
+  const sh=rg.split("!")[0],col=rg.split("!")[1][0];
+  const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:rg});
+  const v=(g.payload&&g.payload.values)||[];let ch=false;
+  const out=v.map(r=>{const x=String(r[0]||"");
+   if(col==="E"){if(x===o){ch=true;return[n]}return[x]}
+   const t=x.split(/[,;]/).map(a=>a.trim());
+   if(t.includes(o)){ch=true;return[[...new Set(t.map(a=>a===o?n:a))].join(", ")]}return[x]});
+  if(ch){await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:`${sh}!${col}2:${col}${v.length+1}`,values:out});k++}
+ }
+ return k}
+function delCat(c){
+ const L=cats(),n=catCount(c);
+ if(L.length<=1)return"Serve almeno una categoria.";
+ if(n.m>0)return"“"+c+"” ha "+n.m+" partite: non si può eliminare. Rinominala con il nome di un’altra categoria per unirle.";
+ S.cats=(S.cats||[]).filter(x=>x!==c);
+ Object.keys(S.matches||{}).forEach(k=>{const o=S.matches[k];if(o.cat===c&&k!==S.partita)delete S.matches[k]});
+ ROSTER.forEach(p=>{if(p.cats)p.cats=p.cats.filter(x=>x!==c)});
+ if(ST.cat===c)ST.cat="";
+ if(S.cat===c){S.cat=L.find(x=>x!==c)||"";S.lineup=(S.lineup||[]).filter(i=>{const p=pid(i);return p&&inCat(p)})}
+ return""}
+function catSheet(msg){
+ const L=cats();
+ open(`<h2>Categorie</h2><div class="sm">Rinomina o elimina. Se rinomini una categoria con il nome di un’altra, le due si uniscono. Una categoria con partite non si elimina.</div>
+ ${L.map((c,i)=>{const n=catCount(c);return `<div class="row" style="flex-wrap:wrap;gap:6px"><input data-cn="${i}" value="${E(c).replace(/"/g,"&quot;")}" style="flex:1;min-width:120px"><button class="g" data-cs="${i}" style="padding:6px 10px">Salva</button><button class="r" data-cd="${i}" style="padding:6px 10px">Elimina</button><span class="sm" style="width:100%">${n.m} partite · ${n.a} atlete${c===S.cat?" · categoria in uso":""}</span></div>`}).join("")}
+ <div class="sm" id="cmsg" style="color:#b45309">${E(msg||"")}</div>
+ <button class="cancel" data-x="1">Fatto</button>`);
+ document.querySelectorAll("[data-cs]").forEach(b=>b.onclick=async()=>{
+  const i=+b.dataset.cs,o=L[i],n=document.querySelector('[data-cn="'+i+'"]').value.trim();
+  if(!n||n===o){catSheet("Nessuna modifica.");return}
+  renCat(o,n);try{save();render()}catch(e){}
+  let m="Rinominata ✓";
+  try{const k=await renSheet(o,n);m+=k?" Aggiornato anche il foglio Google.":" Nel foglio non c’erano righe con il vecchio nome."}
+  catch(e){m+=" Foglio non aggiornato ("+((e&&(e.code||e.message))||"non collegato")+"): le partite già inviate possono riapparire con il vecchio nome."}
+  catSheet(m)});
+ document.querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>{
+  const c=L[+b.dataset.cd],e=delCat(c);
+  if(e){catSheet(e);return}
+  try{save();render()}catch(x){}catSheet("Eliminata ✓")});
+}
 function allMc(){return allM().filter(o=>!ST.cat||o.cat===ST.cat)}
 function allM(){stash();return Object.entries(S.matches).map(([id,o])=>({id,...o})).filter(o=>o.rows.length).sort((a,b)=>String(a.data).localeCompare(String(b.data)))}
 function ftab(m,tm){return `<table class="st"><tr><th class="l">Fond.</th><th>N</th><th>+</th><th>−</th><th>Eff.</th><th>Squadra</th></tr>${FD.map(([n,fn])=>{const a=fn(m),e=eff(a),te=eff(fn(tm));return `<tr><td class="l">${n}</td><td>${a[0]||"·"}</td><td>${a[1]||"·"}</td><td>${a[2]||"·"}</td><td class="${e===null||te===null?"":e>=te?"g":"r"}">${fmt(e)}</td><td>${fmt(te)}</td></tr>`}).join("")}</table>`}
@@ -863,6 +913,7 @@ function matchSheet(){
  <div class="sm">Squadra</div><input data-k="squadra" value="${v("squadra")}">
  <div class="sm">Categoria</div><select data-k="cat">${cats().map(c=>`<option${c===S.cat?" selected":""}>${E(c)}</option>`).join("")}</select>
  <div style="display:flex;gap:6px"><input id="nc" placeholder="Nuova categoria (es. U16)"><button id="nb" style="white-space:nowrap">＋ Aggiungi</button></div>
+ <button class="cancel" id="cmg">✎ Rinomina o elimina categorie</button>
  <div class="sm">ID partita</div><input data-k="partita" value="${v("partita")}">
  <div class="sm">Note</div><input data-k="note" value="${v("note")}">
  <div class="row"><span>Risultato set (calcolato)</span><b>${x.r}</b></div>
@@ -871,6 +922,7 @@ function matchSheet(){
  <button class="cancel" id="vpb">⚙ Colonne da stampare nel PDF</button>
  <button class="r cancel" id="nm">Nuova partita (questa resta in archivio)</button>
  <button class="cancel" data-x="1">Fatto</button>`);
+ $("cmg").onclick=()=>catSheet();
  $("nb").onclick=()=>{const c=$("nc").value.trim();if(!c)return;S.cats=cats();if(!S.cats.includes(c))S.cats.push(c);S.cat=c;save();render();matchSheet()};
  $("nm").onclick=()=>{if($("nm").dataset.c){stash();S.partita=uid();S.rows=[];S.sent={};S.set=1;S.rot=1;S.avv="";S.data="";S.note="";render();matchSheet()}else{$("nm").dataset.c=1;$("nm").textContent="Tocca ancora per confermare"}};
 }

@@ -186,7 +186,7 @@ main{min-height:0;overflow:hidden;position:relative}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const SCHEDE={scouting:["ID Azione","ID Partita","ID Atleta","Squadra","Categoria","Fondamentale","Esito","Alzata_Direzione","Ruolo","Set","Orario"],
@@ -324,15 +324,15 @@ let QK=null;const QA=[["Ric<br>✓","Ricezione","OK",0],["Dif<br>✓","Difesa","
 const MINATL=6;
 function atlSetup(msg){
  const n=ROc().length;
- open(`<h2>Aggiungi le atlete</h2><div class="sm">Servono almeno ${MINATL} atlete (max 14 convocate) prima di iniziare. Puoi anche scriverle nella scheda Atleti del foglio e importarle.</div>
+ open(`<h2>Aggiungi le atlete</h2>
+ <button class="g cancel" id="aiOk" ${n<MINATL?'disabled style="opacity:.55"':""}>${n<MINATL?"Aggiungi ancora "+(MINATL-n)+" atlete per continuare":"Continua ✓ ("+n+" atlete)"}</button><div class="sm">Servono almeno ${MINATL} atlete (max 14 convocate) prima di iniziare. Puoi anche scriverle nella scheda Atleti del foglio e importarle.</div>
  <button class="cancel" id="aiImp">⬇ Importa atlete dal foglio Google</button>
  <div class="sm">Oppure aggiungile qui</div>
  <input id="aiN" placeholder="Nome e cognome"><input id="aiNum" inputmode="numeric" placeholder="Numero di maglia">
  <select id="aiR">${["Palleggiatore","Opposto","Banda","Centrale","Libero"].map(r=>`<option>${r}</option>`).join("")}</select>
  <button class="g cancel" id="aiAdd">＋ Aggiungi atleta</button>
  <div class="sm" id="aiErr" style="color:#dc2626">${msg||""}</div>
- ${ROc().map(p=>`<div class="row"><span>#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><button class="cancel" data-aidel="${p.id}" style="padding:6px 10px">✕</button></div>`).join("")}
- <button class="g cancel" id="aiOk" ${n<MINATL?'disabled style="opacity:.45"':""}>Continua (${n} atlete)</button>`);
+ ${ROc().map(p=>`<div class="row"><span>#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><button class="cancel" data-aidel="${p.id}" style="padding:6px 10px">✕</button></div>`).join("")}`);
  $("aiImp").onclick=e=>importAtl(e.target,atlSetup);
  $("aiAdd").onclick=()=>{
   const nome=$("aiN").value.trim(),num=$("aiNum").value.trim();
@@ -350,8 +350,8 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v9 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
- <button class="g cancel" id="supGoo">Accedi con Google (consigliato)</button><div class="sm">Collega il tuo account: l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v10 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Collega il tuo account: l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
  <button class="g cancel" id="supOk">Inizia</button><div class="sm" id="supErr" style="color:#dc2626"></div>`);
@@ -1085,6 +1085,7 @@ document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 migPos();
 render();
+try{const gb=$("bGoo");if(gb&&TOK)gb.textContent="G ✓"}catch(e){}
 gs("config").then(c=>{const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat}).catch(()=>{}).then(()=>{if(!S.squadra||!S.cat)setupSheet();else{S.cats=cats();if(!S.onboarded&&ROSTER.length)S.onboarded=true;save();render();if(!S.onboarded)atlSetup()}});
 </script>
 <script>

@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -244,6 +244,16 @@ async function gs(fn,a){a=a||{};
  if(fn==="config"&&!TOK)throw{code:"non collegato"};
  try{
   const id=await ensureSheet();
+  if(fn==="delete_by_id"){
+   const ids=new Set((a.ids||[]).map(String));
+   const col=await api(VB+id+"/values/"+enc(a.sheet+"!A1:A60000"));
+   const rows=[];(col.values||[]).forEach((r,i)=>{if(i>0&&ids.has(String(r[0]||"")))rows.push(i)});
+   if(!rows.length)return{payload:{deleted:0}};
+   const meta=await api(VB+id+"?fields=sheets.properties(sheetId,title)");
+   const sid=meta.sheets.find(x=>x.properties.title===a.sheet).properties.sheetId;
+   const reqs=rows.sort((x,y)=>y-x).map(i=>({deleteDimension:{range:{sheetId:sid,dimension:"ROWS",startIndex:i,endIndex:i+1}}}));
+   await api(VB+id+":batchUpdate",{method:"POST",body:JSON.stringify({requests:reqs})});
+   return{payload:{deleted:rows.length}}}
   if(fn==="get_values"){const r=await api(VB+id+"/values/"+enc(a.range)+"?valueRenderOption=FORMATTED_VALUE");return{payload:{values:r.values||[]}}}
   if(fn==="append_values"){await api(VB+id+"/values/"+enc(a.range)+":append?valueInputOption=RAW&insertDataOption=INSERT_ROWS",{method:"POST",body:JSON.stringify({values:a.values})});return{payload:{}}}
   if(fn==="update_values"){await api(VB+id+"/values/"+enc(a.range)+"?valueInputOption=RAW",{method:"PUT",body:JSON.stringify({values:a.values})});return{payload:{}}}
@@ -349,7 +359,7 @@ function atlSetup(msg){
   ROSTER.push({id:uid(),n:nome,num:num!==""&&!isNaN(num)?Number(num):"",ruolo:$("aiR").value,conv:cv<14,cats:S.cat?[S.cat]:[],inCampo:false});
   try{save()}catch(e){}
   atlSetup()};
- document.querySelectorAll("[data-aidel]").forEach(b=>b.onclick=()=>{ROSTER=ROSTER.filter(p=>p.id!==b.dataset.aidel);try{save()}catch(e){}atlSetup()});
+ document.querySelectorAll("[data-aidel]").forEach(b=>b.onclick=()=>{const di=b.dataset.aidel;ROSTER=ROSTER.filter(p=>p.id!==di);queueDel("Atleti",di);try{save()}catch(e){}atlSetup();tryFlush()});
  $("aiOk").onclick=()=>{
   if(ROc().length<MINATL){$("aiErr").textContent="Servono almeno "+MINATL+" atlete.";return}
   S.onboarded=true;try{save()}catch(e){}
@@ -358,7 +368,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v17 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v18 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -579,6 +589,7 @@ function assignSlot(id,slot){
  if(id==="OUT"){const o=S.lineup.find(x=>S.pos[x]===slot);if(o){S.lineup=S.lineup.filter(x=>x!==o);delete S.pos[o]}render();lineupSheet();return}
  setSlot(id,slot)}
 async function syncAtleti(mcp){
+ await flushDel(mcp);
  const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:"Atleti!A2:G300"});
  const ex=((g.payload&&g.payload.values)||[]).map(r=>[r[0]||"",r[1]||"",r[2]===undefined?"":r[2],r[3]||"",r[4]||"",r[5]||"",r[6]||""]),idx={};
  ex.forEach((r,i)=>{if(r[0])idx[r[0]]=i});
@@ -594,6 +605,7 @@ async function importAtl(b,after){
  b.textContent="Importo…";
  try{
   const mcp=await claude.use("mcp");
+  await flushDel(mcp);
   const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:"Atleti!A2:G300"});
   const rows=(g.payload&&g.payload.values)||[];
   let nw=0,up=0,fix=false;const ids=[];
@@ -852,7 +864,7 @@ function athSheet(id){
  if(!nw)$("ad").onclick=()=>{
   if(S.rows.some(r=>r.atleta===id)){$("ad").textContent="Ha azioni registrate: togli la convocazione";return}
   if(!$("ad").dataset.c){$("ad").dataset.c=1;$("ad").textContent="Tocca ancora per eliminare";return}
-  ROSTER=ROSTER.filter(x=>x.id!==id);S.lineup=S.lineup.filter(x=>x!==id);render();lineupSheet();
+  ROSTER=ROSTER.filter(x=>x.id!==id);S.lineup=S.lineup.filter(x=>x!==id);queueDel("Atleti",id);save();render();lineupSheet();tryFlush();
  };
 }
 function lineupOld(){
@@ -1046,6 +1058,7 @@ async function sendSheets(bt){
  const pend=S.rows.filter(r=>!S.sent[r.id]);
  msg("Invio in corso…");
  try{
+  await flushDel(mcp);
   if(pend.length){
    await mcp.callTool(SRV,"append_values",{spreadsheetId:SID,range:"scouting!A1",values:pend.map(r=>[r.id,S.partita,r.atleta,S.squadra,S.cat,r.f,r.e,"",r.pos||"",r.set,r.t])});
    pend.forEach(r=>{S.sent[r.id]=1});save();
@@ -1064,12 +1077,56 @@ async function sendSheets(bt){
  }
 }
 function tsv(){return S.rows.map(r=>[r.id,S.partita,r.atleta,S.squadra,S.cat,r.f,r.e,"",r.pos||"",r.set,r.t].join("\t")).join("\n")}
+function queueDel(sheet,ids){S.pdel=S.pdel||[];[].concat(ids).forEach(i=>S.pdel.push({s:sheet,i}));try{save()}catch(e){}}
+async function flushDel(mcp){
+ const q=S.pdel||[];if(!q.length)return 0;let n=0;
+ for(const sh of [...new Set(q.map(x=>x.s))]){
+  const ids=q.filter(x=>x.s===sh).map(x=>x.i);
+  await mcp.callTool(SRV,"delete_by_id",{spreadsheetId:SID,sheet:sh,ids});
+  S.pdel=S.pdel.filter(x=>x.s!==sh);n+=ids.length;save()}
+ return n}
+async function tryFlush(){try{const m=await claude.use("mcp");if(m)await flushDel(m)}catch(e){}}
+function editSheet(msg){
+ const L=S.rows.slice().reverse();
+ open(`<h2>Correggi azioni (${S.rows.length})</h2><div class="sm">Tocca ✎ per modificare o 🗑 per eliminare. Le correzioni arrivano nel foglio con “Salva partita e invia”. Per correggere una partita vecchia richiamala prima da Partita → Richiama altra partita.</div>
+ <div class="sm" style="color:#b45309">${E(msg||"")}</div>
+ <div style="max-height:56vh;overflow:auto">${L.map(r=>`<div class="row"><span>S${r.set} · ${E(r.nome)} · ${E(r.f)} · ${E(r.e)} <span class="sm">${(r.t||"").slice(11,16)}</span></span><span style="display:flex;gap:6px"><button data-re="${r.id}" style="padding:6px 10px">✎</button><button class="r" data-rd="${r.id}" style="padding:6px 10px">🗑</button></span></div>`).join("")||'<div class="sm">Nessuna azione</div>'}</div>
+ <button class="cancel" data-x="1">Chiudi</button>`);
+ document.querySelectorAll("[data-re]").forEach(b=>b.onclick=()=>editAct(b.dataset.re));
+ document.querySelectorAll("[data-rd]").forEach(b=>b.onclick=()=>{
+  if(!b.dataset.c){b.dataset.c=1;b.textContent="Sicuro?";return}
+  const id=b.dataset.rd;if(!S.rows.some(x=>x.id===id))return;
+  S.rows=S.rows.filter(x=>x.id!==id);
+  if((S.sent||{})[id]){queueDel("scouting",id);delete S.sent[id]}
+  save();try{render()}catch(e){}tryFlush();editSheet("Azione eliminata ✓")});
+}
+function editAct(id){
+ const r=S.rows.find(x=>x.id===id);if(!r)return;
+ const ath=ROSTER.filter(p=>inCat(p)||p.id===r.atleta);
+ open(`<h2>Modifica azione</h2>
+ <div class="sm">Atleta</div><select id="ea1">${ath.map(p=>`<option value="${p.id}" ${p.id===r.atleta?"selected":""}>#${p.num===""?"–":p.num} ${E(p.n)}</option>`).join("")}<option value="${OPP}" ${r.atleta===OPP?"selected":""}>Avversario</option></select>
+ <div class="sm">Fondamentale</div><select id="ea2">${FK.map(f=>`<option ${f===r.f?"selected":""}>${E(f)}</option>`).join("")}</select>
+ <div class="sm">Esito</div><select id="ea3"></select>
+ <div class="sm">Set</div><select id="ea4">${[1,2,3,4,5].map(n=>`<option ${n===+r.set?"selected":""}>${n}</option>`).join("")}</select>
+ <button class="g cancel" id="ea5">Salva modifica</button><button class="cancel" id="ea6">Annulla</button>`);
+ const fill=()=>{const f=$("ea2").value;$("ea3").innerHTML=(F[f]||[]).map(x=>`<option ${x[0]===r.e&&f===r.f?"selected":""}>${E(x[0])}</option>`).join("")};
+ fill();$("ea2").onchange=fill;
+ $("ea6").onclick=()=>editSheet();
+ $("ea5").onclick=()=>{
+  const f=$("ea2").value,e=$("ea3").value,it=(F[f]||[]).find(x=>x[0]===e);if(!it)return;
+  const aid=$("ea1").value,p=aid===OPP?{n:"Avversario"}:pid(aid);if(!p)return;
+  const chg=aid!==r.atleta;
+  r.atleta=aid;r.nome=p.n;r.f=f;r.e=e;r.pt=it[1];r.set=+$("ea4").value;if(chg)r.pos=aid===OPP?"":(S.pos[aid]||"");
+  if((S.sent||{})[r.id]){queueDel("scouting",r.id);delete S.sent[r.id]}
+  save();try{render()}catch(x){}tryFlush();editSheet("Azione modificata ✓")}
+}
 function logSheet(){
  const last=S.rows.slice(-8).reverse();
  open(`<h2>Azioni (${S.rows.length})</h2>
  
  ${last.map(r=>`<div class="row"><span>S${r.set} · ${r.nome} · ${r.f} · ${r.e}</span><span class="sm">${r.t.slice(11,16)}</span></div>`).join("")||'<div class="sm">Nessuna azione</div>'}
  ${gooRow()}
+ <button class="cancel" id="ea">✎ Correggi o elimina azioni</button>
  <button class="g cancel" id="ss">💾 Salva partita e invia</button>
  <button class="g cancel" id="sx">☁ Invia a Google Sheets (${S.rows.filter(r=>!(S.sent||{})[r.id]).length} da inviare)</button>
  <div class="sm">Backup: conserva questo testo per ripristinare in caso di problemi</div><textarea id="rb">${JSON.stringify(S).replace(/&/g,"&amp;").replace(/</g,"&lt;")}</textarea>
@@ -1079,6 +1136,7 @@ function logSheet(){
  <button class="cancel" data-x="1">Chiudi</button>`);
  
  $("sx").onclick=sendSheets;
+ $("ea").onclick=()=>editSheet();
  $("rr").onclick=()=>{try{S=Object.assign(S,JSON.parse($("rb").value));if(S.roster&&S.roster.length)ROSTER=S.roster;migPos();render();$("rr").textContent="Ripristinato ✓"}catch(e){$("rr").textContent="Testo non valido"}};
  $("ra").onclick=()=>{
   if(!$("ra").dataset.c){$("ra").dataset.c=1;$("ra").textContent="Tocca ancora per confermare (restano quelle in archivio)";return}

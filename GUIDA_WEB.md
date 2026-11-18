@@ -47,3 +47,6 @@ Nel repository GitHub, accanto a `index.html`, carica anche: `manifest.webmanife
 - L'app vede solo il foglio che ha creato lei. I fogli fatti con la versione Apps Script non vengono letti: per i vecchi dati servirebbe un'importazione.
 - Il PDF viene scaricato dal browser.
 - Dopo questa tappa, la stessa pagina si può inserire in un'app Android (tappa successiva).
+
+## Foto delle atlete
+La foto si inserisce da **Formazione → scheda dell'atleta**. Viene salvata anche nella colonna **Foto** della scheda `Atleti` (colonna G), così compare su tutti i dispositivi dopo **Invia atlete al file Google** / **Importa atlete dal foglio Google**. La colonna contiene testo lungo: non modificarla e, se disturba, restringila o nascondila.

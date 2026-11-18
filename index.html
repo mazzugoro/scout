@@ -157,7 +157,7 @@ main{min-height:0;overflow:hidden;position:relative}
 .mini[data-n="3"] button{font-size:clamp(11px,2.5vh,19px)!important}.mini[data-n="2"] button{font-size:clamp(12px,3vh,24px)!important}
 .grid.cv{grid-template-rows:1fr 1.2fr}
 .grid.cv .mini[data-n] button{font-size:clamp(10px,1.9vh,15px)!important}
-</style></head><body>
+.av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto;margin-right:2px}.row .av{width:26px;height:26px;vertical-align:middle;margin-right:6px}.zc .av{width:22px;height:22px;vertical-align:middle;margin-right:3px}.cv .pl .av{width:32px;height:32px}</style></head><body>
 <header>
  <div style="display:flex;gap:6px"><button class="mi" id="mi" style="flex:1"></button><button class="mi" id="bView" style="padding:2px 12px"></button><button class="mi" id="bLeg" style="padding:2px 12px">?</button><button class="mi" id="bVis" style="padding:2px 12px">⚙</button><button class="mi" id="bGoo" style="padding:2px 10px">G</button><button id="bLock" style="display:none"></button></div>
  <div class="sets" id="sets"></div>
@@ -186,13 +186,13 @@ main{min-height:0;overflow:hidden;position:relative}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
 const SCHEDE={scouting:["ID Azione","ID Partita","ID Atleta","Squadra","Categoria","Fondamentale","Esito","Alzata_Direzione","Ruolo","Set","Orario"],
  Partite:["ID Partita","Data","Squadra","Avversario","Categoria","Casa/Fuori","Note","Risultato","Set1","Set2","Set3","Set4","Set5"],
- Atleti:["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie"],Impostazioni:["Voce","Valore"]};
+ Atleti:["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie","Foto"],Impostazioni:["Voce","Valore"]};
 let TOK=null,TEXP=0,SHID=null;
 function saveTok(){try{localStorage.setItem("scoutTok",JSON.stringify({t:TOK,e:TEXP}))}catch(e){}}
 try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>Date.now()+60000){TOK=o.t;TEXP=o.e}}catch(e){}
@@ -311,7 +311,7 @@ function subSheet(id){
  const p=pid(id),slot=S.pos[id],want=SR[slot];
  const bench=ROSTER.filter(x=>x.conv&&inCat(x)&&!S.lineup.includes(x.id)).sort((a,b)=>((b.ruolo===want)-(a.ruolo===want))||RO.indexOf(a.ruolo)-RO.indexOf(b.ruolo)||String(a.n).localeCompare(b.n));
  open(`<h2>Sostituzione: esce #${p.num===""?"–":p.num} ${E(p.n)} (${slot})</h2><div class="sm">Chi entra prende la posizione ${slot}. Prima le ${want.toLowerCase()}, poi le altre.</div>
- ${bench.length?bench.map(x=>`<button class="row" style="width:100%;text-align:left" data-si="${x.id}" data-so="${id}"><span>#${x.num===""?"–":x.num} ${E(x.n)} <span class="sm">${x.ruolo}</span></span><span class="sm">${x.ruolo===want?"stesso ruolo":""}</span></button>`).join(""):'<div class="sm">Nessuna convocata in panchina</div>'}
+ ${bench.length?bench.map(x=>`<button class="row" style="width:100%;text-align:left" data-si="${x.id}" data-so="${id}"><span>${av(x)}#${x.num===""?"–":x.num} ${E(x.n)} <span class="sm">${x.ruolo}</span></span><span class="sm">${x.ruolo===want?"stesso ruolo":""}</span></button>`).join(""):'<div class="sm">Nessuna convocata in panchina</div>'}
  <button class="cancel" data-bk="1">← Indietro</button>`);
 }
 function doSub(inId,outId){const i=S.lineup.indexOf(outId),s=S.pos[outId];if(i<0)return;S.lineup[i]=inId;S.pos[inId]=s;delete S.pos[outId];render();lineupSheet()}
@@ -335,7 +335,7 @@ function atlSetup(msg){
  <select id="aiR">${["Palleggiatore","Opposto","Banda","Centrale","Libero"].map(r=>`<option>${r}</option>`).join("")}</select>
  <button class="g cancel" id="aiAdd">＋ Aggiungi atleta</button>
  <div class="sm" id="aiErr" style="color:#dc2626">${msg||""}</div>
- ${ROc().map(p=>`<div class="row"><span>#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><button class="cancel" data-aidel="${p.id}" style="padding:6px 10px">✕</button></div>`).join("")}`);
+ ${ROc().map(p=>`<div class="row"><span>${av(p)}#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><button class="cancel" data-aidel="${p.id}" style="padding:6px 10px">✕</button></div>`).join("")}`);
  $("aiImp").onclick=e=>importAtl(e.target,atlSetup);
  $("aiAdd").onclick=()=>{
   const nome=$("aiN").value.trim(),num=$("aiNum").value.trim();
@@ -353,7 +353,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v11 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v13 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -480,7 +480,10 @@ const ORDS={A:["P","S1","C1","O","S2","C2"],B:["P","C1","S1","O","C2","S2"]};
 function zmap(){const o=ORDS[S.ord||"A"],pz=S.pz||1,m={};o.forEach((s,i)=>{m[(pz-1+i)%6+1]=s});return m}
 function zoneOf(id){const s=S.pos[id],zm=zmap();for(const z in zm)if(zm[z]===s)return +z;return 0}
 function miniHTML(p){const ps=S.pos[p.id],L=QA.map((q,i)=>[q,i]).filter(([q,i])=>qv(i)&&!(i===3&&zoneOf(p.id)!==1)&&i!==4&&!(ps==="L"&&i>1)&&!((ps==="C1"||ps==="C2")&&i===0));return `<div class="mini" data-n="${L.length}" style="grid-template-columns:repeat(${L.length},1fr)">${L.map(([q,i])=>`<button data-qa="${i}" data-p="${p.id}">${q[0]}</button>`).join("")}</div>`}
-function tileHTML(p,zl,note,cls){return `<div class="tile ${cls||""} ${rcl(p.id)}"><button class="pl" data-p="${p.id}"><b>${p.num===""?"–":p.num}</b><span>${p.n}<em><span class="zl">${zl}</span> <strong style="color:var(--ac)">${S.pos[p.id]||""}</strong>${note?" · "+note:""}</em></span></button>${miniHTML(p)}</div>`}
+const av=p=>p&&p.photo?`<img class="av" src="${p.photo}" alt="">`:"";
+function resizePhoto(file,cb){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const n=128,c=document.createElement("canvas");c.width=c.height=n;const m=Math.min(im.width,im.height);c.getContext("2d").drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,n,n);cb(c.toDataURL("image/jpeg",0.75))};im.src=r.result};r.readAsDataURL(file)}
+let PH;
+function tileHTML(p,zl,note,cls){return `<div class="tile ${cls||""} ${rcl(p.id)}"><button class="pl" data-p="${p.id}">${av(p)}<b>${p.num===""?"–":p.num}</b><span>${p.n}<em><span class="zl">${zl}</span> <strong style="color:var(--ac)">${S.pos[p.id]||""}</strong>${note?" · "+note:""}</em></span></button>${miniHTML(p)}</div>`}
 function courtHTML(){
  const zm=zmap(),by=s=>{const id=S.lineup.find(x=>S.pos[x]===s);return id?pid(id):null},lib=by("L");
  return [4,3,2,5,6,1].map(z=>{const s=zm[z];let p=by(s),note="";
@@ -506,14 +509,14 @@ function rotSheet(){
 }
 function courtPick(){
  const zm=zmap(),by=s=>{const id=S.lineup.find(x=>S.pos[x]===s);return id?pid(id):null};
- const cell=(s,z)=>{const p=by(s);return `<button class="zc r-${s[0]}" data-zs="${s}"><small>${z?"P"+z+" · ":""}${s}</small>${p?`<b>#${p.num===""?"–":p.num}</b> ${E(p.n)}`:'<span style="color:var(--mu)">scegli</span>'}</button>`};
+ const cell=(s,z)=>{const p=by(s);return `<button class="zc r-${s[0]}" data-zs="${s}"><small>${z?"P"+z+" · ":""}${s}</small>${p?`${av(p)}<b>#${p.num===""?"–":p.num}</b> ${E(p.n)}`:'<span style="color:var(--mu)">scegli</span>'}</button>`};
  return `<div class="sm" style="display:flex;gap:10px;flex-wrap:wrap">${[["P","Palleggio"],["O","Opposto"],["S","Bande"],["C","Centrali"],["L","Libero"]].map(([k,t])=>`<span class="r-${k}" style="border-left:12px solid var(--rc);padding-left:4px">${t}</span>`).join("")}</div><div class="sm">1) Dove sta il palleggiatore</div><div class="zg6">${[1,2,3,4,5,6].map(z=>`<button class="${(S.pz||1)===z?"g":""}" data-zp="${z}" style="padding:10px 0;font-weight:700">P${z}</button>`).join("")}</div>
  <div class="sm">2) Tocca una posizione per scegliere l’atleta (rete in alto)</div><div class="zg">${[4,3,2,5,6,1].map(z=>cell(zm[z],z)).join("")}</div><div class="zg" style="grid-template-columns:1fr;margin-top:6px">${cell("L",0)}</div>`}
 function slotPick(slot){
  const want=SR[slot],cur=S.lineup.find(x=>S.pos[x]===slot);
  const L=ROSTER.filter(p=>p.conv&&inCat(p)).sort((a,b)=>((b.ruolo===want)-(a.ruolo===want))||RO.indexOf(a.ruolo)-RO.indexOf(b.ruolo)||String(a.n).localeCompare(b.n));
  open(`<h2>${slot} · ${SN[slot]}</h2><div class="sm">Scegli chi occupa questa posizione. Prima le atlete con lo stesso ruolo, poi le altre.</div>
- ${L.map(p=>{const ps=S.lineup.includes(p.id)?S.pos[p.id]:"";return `<button class="row" style="width:100%;text-align:left" data-sa="${p.id}" data-ss="${slot}"><span>#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><span class="sm">${p.id===cur?"attuale":ps?"in campo "+ps:p.ruolo===want?"stesso ruolo":""}</span></button>`}).join("")||'<div class="sm">Nessuna convocata: convocane prima alcune.</div>'}
+ ${L.map(p=>{const ps=S.lineup.includes(p.id)?S.pos[p.id]:"";return `<button class="row" style="width:100%;text-align:left" data-sa="${p.id}" data-ss="${slot}"><span>${av(p)}#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><span class="sm">${p.id===cur?"attuale":ps?"in campo "+ps:p.ruolo===want?"stesso ruolo":""}</span></button>`}).join("")||'<div class="sm">Nessuna convocata: convocane prima alcune.</div>'}
  ${cur?`<button class="r cancel" data-sa="OUT" data-ss="${slot}">Libera la posizione</button>`:""}
  <button class="cancel" data-bk="1">← Indietro</button>`);
 }
@@ -521,21 +524,22 @@ function assignSlot(id,slot){
  if(id==="OUT"){const o=S.lineup.find(x=>S.pos[x]===slot);if(o){S.lineup=S.lineup.filter(x=>x!==o);delete S.pos[o]}render();lineupSheet();return}
  setSlot(id,slot)}
 async function syncAtleti(mcp){
- const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:"Atleti!A2:F300"});
- const ex=((g.payload&&g.payload.values)||[]).map(r=>[r[0]||"",r[1]||"",r[2]===undefined?"":r[2],r[3]||"",r[4]||""]),idx={};
+ const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:"Atleti!A2:G300"});
+ const ex=((g.payload&&g.payload.values)||[]).map(r=>[r[0]||"",r[1]||"",r[2]===undefined?"":r[2],r[3]||"",r[4]||"",r[5]||"",r[6]||""]),idx={};
  ex.forEach((r,i)=>{if(r[0])idx[r[0]]=i});
  let nw=0;
- ROSTER.forEach(p=>{const row=[p.id,p.n,p.num===""?"":p.num,p.ruolo,p.conv?"Sì":"No",(p.cats||[]).join(", ")];if(p.id in idx)ex[idx[p.id]]=row;else{ex.push(row);nw++}});
- if(!(OPP in idx))ex.push([OPP,"Avversario","","","",""]);
- ex.forEach(r=>{while(r.length<6)r.push("")});
- await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:`Atleti!A2:F${ex.length+1}`,values:ex});
+ ROSTER.forEach(p=>{const row=[p.id,p.n,p.num===""?"":p.num,p.ruolo,p.conv?"Sì":"No",(p.cats||[]).join(", "),p.photo||""];if(p.id in idx)ex[idx[p.id]]=row;else{ex.push(row);nw++}});
+ if(!(OPP in idx))ex.push([OPP,"Avversario","","","","",""]);
+ ex.forEach(r=>{while(r.length<7)r.push("")});
+ await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:"Atleti!A1:G1",values:[["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie","Foto"]]});
+ await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:`Atleti!A2:G${ex.length+1}`,values:ex});
  return nw}
 function normRuolo(x){const t=String(x||"").trim().toLowerCase();if(t[0]==="p")return"Palleggiatore";if(t[0]==="o")return"Opposto";if(t[0]==="c")return"Centrale";if(t[0]==="l")return"Libero";return"Banda"}
 async function importAtl(b,after){
  b.textContent="Importo…";
  try{
   const mcp=await claude.use("mcp");
-  const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:"Atleti!A2:F300"});
+  const g=await mcp.callTool(SRV,"get_values",{spreadsheetId:SID,range:"Atleti!A2:G300"});
   const rows=(g.payload&&g.payload.values)||[];
   let nw=0,up=0,fix=false;const ids=[];
   rows.forEach(r=>{
@@ -547,6 +551,7 @@ async function importAtl(b,after){
    const cv=String(r[4]||"").trim().toLowerCase(),conv=cv===""||/^(s|y|t|1|x|v)/.test(cv),num=String(r[2]===undefined?"":r[2]).trim(),nn=num!==""&&!isNaN(num)?Number(num):"";
    const cs=String(r[5]||"").split(/[,;\/]/).map(x=>x.trim()).filter(Boolean);
    const p=pid(id),dati={n:nome,num:nn,ruolo:normRuolo(r[3]),conv,cats:cs};
+   if(r[6]&&String(r[6]).indexOf("data:image")===0)dati.photo=String(r[6]);
    if(p){Object.assign(p,dati);up++}else{ROSTER.push({id,...dati,inCampo:false});nw++}
   });
   if(fix)await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:`Atleti!A2:A${ids.length+1}`,values:ids});
@@ -709,7 +714,7 @@ function render(){
  {const ro=isRO();$("ro").style.display=ro?"flex":"none";$("ro").innerHTML=ro?`<div style="font-size:22px">👁 Sola lettura</div><div>Sta inserendo: ${E((LK&&LK.label)||"altro account")}</div><button class="g" id="rotake" style="padding:14px 22px;font-size:16px">Prendi il controllo</button>`:"";$("bLock").textContent=ro?"👁":(DB&&LK&&LK.holder===ME?"✎":"🔒")}
  $("lg").style.display=S.leg?"flex":"none";$("lg").innerHTML=S.leg?legStrip():"";
  $("bView").textContent=S.view==="c"?"▦ Lista":"▦ Campo";$("cc").style.display=S.view==="c"?"grid":"none";$("cc").innerHTML=S.view==="c"?ccHTML():"";$("court").className=S.view==="c"?"grid cv":"grid";
- $("court").innerHTML=S.view==="c"?courtHTML():ordL(ls).map(p=>!p?"<div></div>":`<div class="tile ${zoneOf(p.id)===1?"p1":""} ${rcl(p.id)}"><button class="pl" data-p="${p.id}"><b>${p.num===""?"–":p.num}</b><span>${p.n}<em><strong style="color:var(--ac)">${S.pos[p.id]||""}</strong> · ${p.ruolo}</em></span></button>${(()=>{const ps=S.pos[p.id],L=QA.map((q,i)=>[q,i]).filter(([q,i])=>qv(i)&&!(i===3&&zoneOf(p.id)!==1)&&i!==4&&!(ps==="L"&&i>1)&&!((ps==="C1"||ps==="C2")&&i===0));return `<div class="mini" data-n="${L.length}" style="grid-template-columns:repeat(${L.length},1fr)">${L.map(([q,i])=>`<button class="${i===4?"r dn":""}" data-qa="${i}" data-p="${p.id}">${q[0]}</button>`).join("")}</div>`})()}</div>`).join("");
+ $("court").innerHTML=S.view==="c"?courtHTML():ordL(ls).map(p=>!p?"<div></div>":`<div class="tile ${zoneOf(p.id)===1?"p1":""} ${rcl(p.id)}"><button class="pl" data-p="${p.id}">${av(p)}<b>${p.num===""?"–":p.num}</b><span>${p.n}<em><strong style="color:var(--ac)">${S.pos[p.id]||""}</strong> · ${p.ruolo}</em></span></button>${(()=>{const ps=S.pos[p.id],L=QA.map((q,i)=>[q,i]).filter(([q,i])=>qv(i)&&!(i===3&&zoneOf(p.id)!==1)&&i!==4&&!(ps==="L"&&i>1)&&!((ps==="C1"||ps==="C2")&&i===0));return `<div class="mini" data-n="${L.length}" style="grid-template-columns:repeat(${L.length},1fr)">${L.map(([q,i])=>`<button class="${i===4?"r dn":""}" data-qa="${i}" data-p="${p.id}">${q[0]}</button>`).join("")}</div>`})()}</div>`).join("");
  const l=S.rows[S.rows.length-1];
  $("lastTxt").textContent=l?`${l.nome} · ${l.f} · ${l.e}`:"Nessuna azione";
  save();
@@ -727,7 +732,7 @@ function fkFor(id){return fkFor0(id).filter(f=>vis("scout",f))}
 function fkFor0(id){const ps=S.pos[id];if(ps==="L")return["Difesa","Ricezione","Errore"];if(ps==="C1"||ps==="C2")return FK.filter(f=>f!=="Ricezione");return FK}
 function pickF(id){
  const p=pid(id);
- open(`<h2>#${p.num} ${p.n}</h2><div class="opts three">${fkFor(id).map(f=>`<button class="${(()=>{const d=F[f].filter(x=>x[1]!==0);return d.every(x=>x[1]>0)?"g up":d.every(x=>x[1]<0)?"r dn":""})()}" data-f="${f}" data-p="${id}">${f}</button>`).join("")}${S.pos[id]==="L"||!qv(4)?"":`<button class="r dn" data-qa="4" data-p="${id}">PASTE</button>`}</div><button class="cancel" data-x="1">Chiudi</button>`);
+ open(`<h2>${av(p)}#${p.num} ${p.n}</h2><div class="opts three">${fkFor(id).map(f=>`<button class="${(()=>{const d=F[f].filter(x=>x[1]!==0);return d.every(x=>x[1]>0)?"g up":d.every(x=>x[1]<0)?"r dn":""})()}" data-f="${f}" data-p="${id}">${f}</button>`).join("")}${S.pos[id]==="L"||!qv(4)?"":`<button class="r dn" data-qa="4" data-p="${id}">PASTE</button>`}</div><button class="cancel" data-x="1">Chiudi</button>`);
 }
 function pickE(id,f){
  const p=pid(id);let L=F[f].filter(x=>x[1]!==0&&vis("scout",f,x[0]));if(!L.length)L=F[f].filter(x=>x[1]!==0);
@@ -758,7 +763,7 @@ function lineupSheet(){
  open(`<h2>Squadra</h2>${courtPick()}
  <div class="row"><span>Convocate <b>${c.conv}/14</b> · In campo <b>${S.lineup.length}/7</b> (6 + libero)</span></div>
  ${m?`<div class="row" style="border-color:var(--er);color:var(--er)">${m}</div>`:""}
- ${sorted.map(p=>{const inn=S.lineup.includes(p.id);return `<div class="row ${p.conv?"":"off"} ${inn?"in":""}"><span>#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><span style="display:flex;gap:6px"><button data-cv="${p.id}" class="${p.conv?"g":""}" style="${bs}">Conv.</button><button data-ca="${p.id}" class="${inn?"g":""}" style="${bs}">${inn?(S.pos[p.id]||"IN"):"Campo"}</button>${inn?`<button data-sb="${p.id}" style="${bs}">⇄</button>`:""}<button data-ed="${p.id}" style="${bs}">✎</button></span></div>`}).join("")}
+ ${sorted.map(p=>{const inn=S.lineup.includes(p.id);return `<div class="row ${p.conv?"":"off"} ${inn?"in":""}"><span>${av(p)}#${p.num===""?"–":p.num} ${E(p.n)} <span class="sm">${p.ruolo}</span></span><span style="display:flex;gap:6px"><button data-cv="${p.id}" class="${p.conv?"g":""}" style="${bs}">Conv.</button><button data-ca="${p.id}" class="${inn?"g":""}" style="${bs}">${inn?(S.pos[p.id]||"IN"):"Campo"}</button>${inn?`<button data-sb="${p.id}" style="${bs}">⇄</button>`:""}<button data-ed="${p.id}" style="${bs}">✎</button></span></div>`}).join("")}
  <button class="cancel" data-ed="new">+ Aggiungi atleta</button>
  <button class="cancel" id="ia2">⬇ Importa atlete dal foglio Google</button>
  <button class="g cancel" id="sa2">☁ Invia atlete al file Google</button>
@@ -769,18 +774,23 @@ function athSheet(id){
  open(`<h2>${nw?"Nuova atleta":"Modifica atleta"}</h2>
  <div class="sm">Nome</div><input id="an" value="${E(p.n).replace(/"/g,"&quot;")}">
  <div class="sm">Numero maglia</div><input id="anu" type="number" inputmode="numeric" value="${p.num}">
+ <div class="sm">Foto (facoltativa, compare accanto al numero)</div>
+ <div style="display:flex;align-items:center;gap:10px"><img id="apv" class="av" style="width:56px;height:56px" src="${p.photo||""}" ${p.photo?"":"hidden"} alt=""><input type="file" accept="image/*" id="aph" style="flex:1"><button class="cancel" id="aphx" style="padding:6px 10px;width:auto">Togli</button></div>
  <div class="sm">Ruolo</div><select id="ar">${["Palleggiatore","Opposto","Banda","Centrale","Libero"].map(r=>`<option ${r===p.ruolo?"selected":""}>${r}</option>`).join("")}</select>
  <div class="sm">Categorie in cui gioca (nessuna spunta = tutte)</div>
  <div style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0">${cats().map(c=>`<label><input type="checkbox" class="ac" value="${E(c)}" ${(nw?[S.cat]:(p.cats||[])).includes(c)?"checked":""}> ${E(c)}</label>`).join("")}</div>
  <button class="g cancel" id="as">Salva</button>
  ${nw?"":'<button class="r cancel" id="ad">Elimina atleta</button>'}
  <button class="cancel" data-bk="1">← Indietro</button>`);
+ PH=undefined;
+ $("aph").onchange=e=>{const f=e.target.files[0];if(f)resizePhoto(f,d=>{PH=d;$("apv").src=d;$("apv").hidden=false})};
+ $("aphx").onclick=()=>{PH="";$("apv").hidden=true};
  $("as").onclick=()=>{
   const n=$("an").value.trim(),nu=$("anu").value.trim(),ro=$("ar").value;
   if(!n){$("as").textContent="Scrivi il nome";return}
   const cs=[...document.querySelectorAll(".ac:checked")].map(x=>x.value);
-  if(nw)ROSTER.push({id:uid(),n,num:nu===""?"":+nu,ruolo:ro,conv:false,cats:cs,inCampo:false});
-  else{p.n=n;p.num=nu===""?"":+nu;p.ruolo=ro;p.cats=cs;
+  if(nw)ROSTER.push({id:uid(),n,num:nu===""?"":+nu,ruolo:ro,conv:false,cats:cs,photo:PH||"",inCampo:false});
+  else{p.n=n;p.num=nu===""?"":+nu;p.ruolo=ro;p.cats=cs;if(PH!==undefined)p.photo=PH;
    }
   render();lineupSheet();
  };
@@ -792,9 +802,9 @@ function athSheet(id){
 }
 function lineupOld(){
  const sorted=ROc().sort((a,b)=>(b.conv-a.conv)||String(a.n).localeCompare(b.n));
- open(`<h2>Formazione in campo</h2><div class="sm">Tocca per mettere/togliere dal campo (${S.lineup.length} in campo)</div>${sorted.map(p=>`<div class="row ${S.lineup.includes(p.id)?"in":""} ${p.conv?"":"off"}" data-l="${p.id}"><span>#${p.num===""?"–":p.num} ${p.n} <span class="sm">${p.ruolo}${p.conv?"":" · non convocata"}</span></span><span>${S.lineup.includes(p.id)?"IN CAMPO":"panchina"}</span></div>`).join("")}<button class="cancel" data-x="1">Fatto</button>`);
+ open(`<h2>Formazione in campo</h2><div class="sm">Tocca per mettere/togliere dal campo (${S.lineup.length} in campo)</div>${sorted.map(p=>`<div class="row ${S.lineup.includes(p.id)?"in":""} ${p.conv?"":"off"}" data-l="${p.id}"><span>${av(p)}#${p.num===""?"–":p.num} ${p.n} <span class="sm">${p.ruolo}${p.conv?"":" · non convocata"}</span></span><span>${S.lineup.includes(p.id)?"IN CAMPO":"panchina"}</span></div>`).join("")}<button class="cancel" data-x="1">Fatto</button>`);
 }
-function netSheet(){const ls=S.lineup.map(pid).filter(Boolean);open(`<h2>PASTE</h2><div class="sm">Chi ha battuto?</div><div class="opts">${ordL(ls).map(p=>!p?"<div></div>":`<button class="r" data-net="${p.id}">#${p.num===""?"–":p.num} ${p.n}</button>`).join("")}</div><button class="cancel" data-x="1">Annulla</button>`)}
+function netSheet(){const ls=S.lineup.map(pid).filter(Boolean);open(`<h2>PASTE</h2><div class="sm">Chi ha battuto?</div><div class="opts">${ordL(ls).map(p=>!p?"<div></div>":`<button class="r" data-net="${p.id}">${av(p)}#${p.num===""?"–":p.num} ${p.n}</button>`).join("")}</div><button class="cancel" data-x="1">Annulla</button>`)}
 const MK=["avv","data","cf","note","rows","set","rot","sent","squadra","cat"];
 function stash(){S.matches=S.matches||{};const o={};MK.forEach(k=>{o[k]=S[k]});S.matches[S.partita]=o}
 function loadM(id){stash();const o=S.matches[id];if(!o)return;MK.forEach(k=>{S[k]=o[k]});S.partita=id;render()}

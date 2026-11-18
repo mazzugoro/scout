@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -358,7 +358,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v14 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v15 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -536,7 +536,7 @@ async function syncAtleti(mcp){
  ROSTER.forEach(p=>{const row=[p.id,p.n,p.num===""?"":p.num,p.ruolo,p.conv?"Sì":"No",(p.cats||[]).join(", "),p.photo||""];if(p.id in idx)ex[idx[p.id]]=row;else{ex.push(row);nw++}});
  if(!(OPP in idx))ex.push([OPP,"Avversario","","","","",""]);
  ex.forEach(r=>{while(r.length<7)r.push("")});
- await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:"Atleti!A1:G1",values:[["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie","Foto"]]});
+ await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:"Atleti!F1:G1",values:[["Categorie","Foto"]]});
  await mcp.callTool(SRV,"update_values",{spreadsheetId:SID,range:`Atleti!A2:G${ex.length+1}`,values:ex});
  return nw}
 function normRuolo(x){const t=String(x||"").trim().toLowerCase();if(t[0]==="p")return"Palleggiatore";if(t[0]==="o")return"Opposto";if(t[0]==="c")return"Centrale";if(t[0]==="l")return"Libero";return"Banda"}

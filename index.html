@@ -186,9 +186,10 @@ main{min-height:0;overflow:hidden;position:relative}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
+const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
 const SCHEDE={scouting:["ID Azione","ID Partita","ID Atleta","Squadra","Categoria","Fondamentale","Esito","Alzata_Direzione","Ruolo","Set","Orario"],
  Partite:["ID Partita","Data","Squadra","Avversario","Categoria","Casa/Fuori","Note","Risultato","Set1","Set2","Set3","Set4","Set5"],
  Atleti:["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie"],Impostazioni:["Voce","Valore"]};
@@ -207,11 +208,13 @@ function redirectLogin(){
 try{SHID=localStorage.getItem("scoutSheetId")}catch(e){}
 function auth(interactive){return new Promise((ok,ko)=>{
  if(TOK&&Date.now()<TEXP-60000)return ok(TOK);
+ let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+ if(!interactive&&!was)return ko(new Error("Google non collegato: tocca G per collegarlo"));
  if(!(window.google&&google.accounts&&google.accounts.oauth2))return ko(new Error("Accesso Google non disponibile (rete?)"));
  if(CLIENT_ID.indexOf("INSERISCI")===0)return ko(new Error("Manca il Client ID Google nel file"));
  const tc=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:r=>{
-  if(r.error)return ko(new Error(r.error));TOK=r.access_token;TEXP=Date.now()+(r.expires_in||3600)*1000;saveTok();ok(TOK)},
-  error_callback:e=>{const t=e&&e.type;if(t==="popup_failed_to_open"){redirectLogin();return}ko(new Error(t||"accesso annullato"))}});
+  if(r.error)return ko(new Error(r.error));TOK=r.access_token;TEXP=Date.now()+(r.expires_in||3600)*1000;saveTok();try{localStorage.setItem("scoutGoo","1")}catch(e){}ok(TOK)},
+  error_callback:e=>{const t=e&&e.type;if(t==="popup_failed_to_open"&&interactive){redirectLogin();return}ko(new Error(t||"accesso annullato"))}});
  tc.requestAccessToken({prompt:interactive?"select_account":""})})}
 async function api(url,opt){
  const t=await auth(false);
@@ -350,8 +353,8 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v10 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
- <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Collega il tuo account: l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v11 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
  <button class="g cancel" id="supOk">Inizia</button><div class="sm" id="supErr" style="color:#dc2626"></div>`);
@@ -664,6 +667,7 @@ async function saveSend(b){
  if(!S.data){const d=new Date();S.data=d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
  b.textContent="Salvo la partita…";
  stash();save();
+ if(!TOK){b.textContent="Collego Google…";try{await auth(true)}catch(e){b.textContent="Partita salvata sul telefono. Collega Google (tasto G) per inviarla";return}}
  if(DB){try{await pushSync()}catch(e){}}
  await sendSheets(b);
 }
@@ -837,7 +841,7 @@ function matchTsv(){const x=res();const d=S.data?S.data.split("-").reverse().joi
 function matchSheet(){
  if(!S.data){const d=new Date();S.data=d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
  const x=res(),v=k=>String(S[k]||"").replace(/"/g,"&quot;");
- open(`<h2>Dati partita</h2><button class="g cancel" id="ss">💾 Salva partita e invia</button>
+ open(`<h2>Dati partita</h2>${gooRow()}<button class="g cancel" id="ss">💾 Salva partita e invia</button>
  <div class="sm">Avversario</div><input data-k="avv" value="${v("avv")}" placeholder="es. BIMONT">
  <div class="sm">Data</div><input type="date" data-k="data" value="${v("data")}">
  <div class="opts"><button class="${S.cf==="casa"?"g":""}" data-cf="casa">Casa</button><button class="${S.cf==="fuori"?"g":""}" data-cf="fuori">Fuori</button></div>
@@ -998,6 +1002,7 @@ function logSheet(){
  open(`<h2>Azioni (${S.rows.length})</h2>
  
  ${last.map(r=>`<div class="row"><span>S${r.set} · ${r.nome} · ${r.f} · ${r.e}</span><span class="sm">${r.t.slice(11,16)}</span></div>`).join("")||'<div class="sm">Nessuna azione</div>'}
+ ${gooRow()}
  <button class="g cancel" id="ss">💾 Salva partita e invia</button>
  <button class="g cancel" id="sx">☁ Invia a Google Sheets (${S.rows.filter(r=>!(S.sent||{})[r.id]).length} da inviare)</button>
  <button class="g cancel" id="cp">Copia tutte le righe (da incollare nel foglio “scouting”)</button>
@@ -1057,7 +1062,7 @@ document.addEventListener("click",e=>{
  else if(d.cc)ccAct(d.cc);
  else if(d.pz){S.pz=+d.pz;render();rotSheet()}
  else if(d.ord){S.ord=d.ord;render();rotSheet()}
- else if(t.id==="bLeg")legSheet();else if(t.id==="bGoo")googleLogin(t);else if(t.id==="bVis"||t.id==="bVis2")visSheet("scout");else if(t.id==="vpb")visSheet("print");
+ else if(t.id==="bLeg")legSheet();else if(t.id==="bGoo"||t.id==="bGoo2")googleLogin(t);else if(t.id==="bVis"||t.id==="bVis2")visSheet("scout");else if(t.id==="vpb")visSheet("print");
  else if(t.id==="lgt"){S.leg=!S.leg;render();legSheet()}
  else if(t.id==="rpl"){LEGR=!LEGR;report()}
  else if(t.id==="bLock")lockSheet();

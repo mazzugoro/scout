@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -202,16 +202,35 @@ let TOK=null,TEXP=0,SHID=null;
 function saveTok(){try{localStorage.setItem("scoutTok",JSON.stringify({t:TOK,e:TEXP}))}catch(e){}}
 try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>Date.now()+60000){TOK=o.t;TEXP=o.e}}catch(e){}
 /* ritorno dall'accesso a tutta pagina: il token arriva nel frammento dell'indirizzo */
-(function(){const h=location.hash||"";if(h.indexOf("access_token=")<0)return;
+const IN_FRAME=(()=>{try{return window.top!==window}catch(e){return true}})();
+function stopFrame(){try{document.open();document.write("<!doctype html><title>ok</title>");document.close()}catch(e){}}
+(function(){const h=location.hash||"";if(h.indexOf("access_token=")<0){if(IN_FRAME&&h.indexOf("error=")>=0)stopFrame();return}
  const p=new URLSearchParams(h.slice(1));let st=null;try{st=sessionStorage.getItem("scoutOAuthState")}catch(e){}
  if(p.get("access_token")&&(!st||p.get("state")===st)){TOK=p.get("access_token");TEXP=Date.now()+(+p.get("expires_in")||3600)*1000;saveTok()}
- try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}})();
+ try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+ if(IN_FRAME)stopFrame()})();
+const redirUri=()=>location.origin+location.pathname.replace(/index\.html$/,"");
 function redirectLogin(){
  const st=Math.random().toString(36).slice(2);try{sessionStorage.setItem("scoutOAuthState",st)}catch(e){}
  const ru=location.origin+location.pathname.replace(/index\.html$/,"");
  location.href="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:ru,response_type:"token",scope:SCOPES,state:st,include_granted_scopes:"true",prompt:"select_account"})}
 try{SHID=localStorage.getItem("scoutSheetId")}catch(e){}
-function auth(interactive){return new Promise((ok,ko)=>{
+function silentRefresh(ms){return new Promise(ok=>{
+ if(IN_FRAME||!document.body||navigator.onLine===false)return ok(false);
+ const before=TEXP,st=Math.random().toString(36).slice(2);
+ try{sessionStorage.setItem("scoutOAuthState",st)}catch(e){}
+ const f=document.createElement("iframe");f.style.cssText="display:none;width:0;height:0;border:0";
+ f.src="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:redirUri(),response_type:"token",scope:SCOPES,state:st,prompt:"none",include_granted_scopes:"true"});
+ const t0=Date.now(),iv=setInterval(()=>{
+  try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>before&&o.e>Date.now()+60000){TOK=o.t;TEXP=o.e;clearInterval(iv);f.remove();return ok(true)}}catch(e){}
+  if(Date.now()-t0>(ms||8000)){clearInterval(iv);f.remove();ok(false)}},250);
+ document.body.appendChild(f)})}
+async function auth(interactive){
+ if(TOK&&Date.now()<TEXP-60000)return TOK;
+ let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+ if(was||interactive){if(await silentRefresh(interactive?4000:8000))return TOK}
+ return authGis(interactive)}
+function authGis(interactive){return new Promise((ok,ko)=>{
  if(TOK&&Date.now()<TEXP-60000)return ok(TOK);
  let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
  if(!interactive&&!was)return ko(new Error("Google non collegato: tocca G per collegarlo"));
@@ -265,6 +284,14 @@ async function googleLogin(b){
  try{b.textContent="…";await auth(true);await ensureSheet();b.textContent="G ✓";
   try{const c=await gs("config");const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat;save();render()}catch(e){}
  }catch(e){b.textContent="G !";alert("Accesso non riuscito: "+((e&&e.message)||e))}}
+function gooLbl(){const b=document.getElementById("bGoo");if(!b||b.dataset.busy)return;let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+ b.textContent=TOK&&TEXP>Date.now()?"G ✓":(was?"G !":"G")}
+if(!IN_FRAME){
+ setInterval(()=>{let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+  if(was&&(!TOK||TEXP-Date.now()<12*60000))silentRefresh(8000).then(gooLbl);else gooLbl()},60000);
+ document.addEventListener("visibilitychange",()=>{let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+  if(!document.hidden&&was&&(!TOK||TEXP-Date.now()<12*60000))silentRefresh(8000).then(gooLbl)});
+ setTimeout(()=>{let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}if(was&&(!TOK||TEXP<Date.now()+60000))silentRefresh(8000).then(gooLbl);else gooLbl()},1500)}
 const claude={use:async k=>{
  if(k==="mcp")return{callTool:(srv,name,a)=>gs(name,a)};
  if(k==="downloads")return{save:async o=>{const u=URL.createObjectURL(o.data),a=document.createElement("a");a.href=u;a.download=o.filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}};
@@ -368,7 +395,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v18 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v19 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">

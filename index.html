@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -281,6 +281,26 @@ async function ensureSheet(){
   SHID=c.spreadsheetId}
  try{localStorage.setItem(sidKey(),SHID)}catch(e){}
  return SHID}
+async function findTeams(){
+ const q=encodeURIComponent("name contains 'Scout Panchina' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
+ const l=await api("https://www.googleapis.com/drive/v3/files?q="+q+"&fields=files(id,name)&pageSize=100");
+ return l.files||[]}
+function addFound(files){
+ const l=profs();if(!l.some(x=>x.id===ACT))l.push({id:ACT,name:S.squadra||""});
+ const sidOfP=p=>{try{return localStorage.getItem(sidOf(p.id))}catch(e){return null}};
+ const known=new Set(l.map(sidOfP).filter(Boolean));if(SHID)known.add(SHID);
+ let n=0;
+ files.forEach(f=>{
+  if(known.has(f.id))return;
+  if(/^Scout Panchina\s*$/.test(f.name)){
+   if(!l.some(x=>x.id==="p1"))l.push({id:"p1",name:""});
+   try{if(!localStorage.getItem(sidOf("p1")))localStorage.setItem(sidOf("p1"),f.id)}catch(e){}
+   if(ACT==="p1"&&!SHID)SHID=f.id;known.add(f.id);return}
+  const nm=f.name.replace(/^Scout Panchina\s*-?\s*/,"").trim()||f.name;
+  const id="p"+Date.now().toString(36)+n;
+  l.push({id,name:nm});try{localStorage.setItem(sidOf(id),f.id)}catch(e){}
+  known.add(f.id);n++});
+ setProfs(l);return n}
 const enc=encodeURIComponent,VB="https://sheets.googleapis.com/v4/spreadsheets/";
 async function gs(fn,a){a=a||{};
  if(fn==="config"&&!TOK)throw{code:"non collegato"};
@@ -305,6 +325,7 @@ async function gs(fn,a){a=a||{};
  throw{code:"funzione sconosciuta"}}
 async function googleLogin(b){
  try{b.textContent="…";await auth(true);await ensureSheet();b.textContent="G ✓";
+  try{const n=addFound(await findTeams());if(n)alert("Ho trovato altre "+n+" squadre nel tuo Google Drive. Le trovi in Partita → Squadre / società.")}catch(e){}
   try{const c=await gs("config");const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat;save();render()}catch(e){}
  }catch(e){b.textContent="G !";alert("Accesso non riuscito: "+((e&&e.message)||e))}}
 function gooLbl(){const b=document.getElementById("bGoo");if(!b||b.dataset.busy)return;let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
@@ -419,11 +440,14 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v22 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v24 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
  <button class="g cancel" id="supOk">Inizia</button><div class="sm" id="supErr" style="color:#dc2626"></div>`);
+ if(TOK&&TEXP>Date.now())gs("config").then(c=>{const v=(c.payload&&c.payload.config)||{};
+  if(v.squadra&&(!$("supSq").value||$("supSq").value===profName()))$("supSq").value=v.squadra;
+  if(v.cat&&!$("supCat").value)$("supCat").value=v.cat}).catch(()=>{});
  $("supGoo").onclick=async e=>{await googleLogin(e.target);e.target.textContent=TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)";if(S.squadra)$("supSq").value=S.squadra;if(S.cat)$("supCat").value=S.cat};
  $("supOk").onclick=()=>{
   try{
@@ -447,6 +471,7 @@ function profSheet(msg){
  const a=profs();if(!a.some(x=>x.id===ACT))a.push({id:ACT,name:S.squadra||""});
  open(`<h2>Squadre / società</h2><div class="sm">Ogni squadra ha i propri dati sul telefono e il proprio foglio Google (con lo stesso account). Puoi passare dall’una all’altra quando vuoi: i dati non si perdono.</div>
  ${a.map(p=>`<div class="row ${p.id===ACT?"in":""}"><span>${E(p.id===ACT?(S.squadra||p.name||"Senza nome"):(p.name||"Senza nome"))}${p.id===ACT?" · in uso":""}</span><span style="display:flex;gap:6px">${p.id===ACT?"":`<button class="g" data-po="${p.id}" style="padding:6px 10px">Apri</button><button class="r" data-pd="${p.id}" style="padding:6px 10px">Elimina</button>`}</span></div>`).join("")}
+ <button class="cancel" id="pfind">🔍 Cerca altre squadre nel mio Google Drive</button>
  <div class="sm">Nuova squadra o società</div>
  <input id="pnn" placeholder="es. Volley Roma, Società B">
  <button class="g cancel" id="pnb">＋ Crea e apri</button>
@@ -459,6 +484,11 @@ function profSheet(msg){
   setProfs(profs().filter(x=>x.id!==id));
   try{localStorage.removeItem(keyOf(id));localStorage.removeItem(sidOf(id))}catch(e){}
   profSheet("Eliminata dal telefono ✓ (il foglio Google resta nel tuo Drive)")});
+ $("pfind").onclick=async e=>{
+  const b=e.target;b.textContent="Cerco…";
+  try{await auth(true);const n=addFound(await findTeams());
+   profSheet(n?"Trovate e aggiunte "+n+" squadre. Aprile una alla volta: l’app ricarica atlete e partite dal foglio.":"Nessuna nuova squadra trovata nel tuo Drive.")}
+  catch(err){profSheet("Ricerca non riuscita: "+((err&&err.message)||err))}};
  $("pnb").onclick=()=>{
   const n=$("pnn").value.trim();if(!n){profSheet("Scrivi il nome della squadra.");return}
   const l=profs();if(!l.some(x=>x.id===ACT))l.push({id:ACT,name:S.squadra||""});
@@ -742,6 +772,11 @@ function legSheet(){open(`<h2>Legenda</h2><div class="sm">Colore del riquadro = 
 <div class="row"><span><b>Indice</b> nelle statistiche = (punti − errori) ÷ (punti + errori), sulle sole azioni decisive.</span></div>
 <div class="row"><span><b>Salvataggio:</b> automatico sul dispositivo. <b>Salva partita e invia</b> manda tutto al foglio Google.</span></div>
 <div class="row"><span><b>Atlete:</b> si aggiungono e si modificano da <b>Formazione</b>, con una o più categorie.</span></div>
+<div class="row"><span><b>Google (G):</b> G ✓ collegato · G ! scaduto, toccalo per rinnovare. Senza collegamento l’app funziona e i dati restano sul telefono.</span></div>
+<div class="row"><span><b>Foto:</b> si inserisce nella scheda dell’atleta (Formazione) e compare sopra numero e nome.</span></div>
+<div class="row"><span><b>Categorie:</b> in Partita puoi aggiungerle, rinominarle o eliminarle; in Statistiche i filtri mostrano una categoria o tutte.</span></div>
+<div class="row"><span><b>Squadre:</b> in Partita → Squadre / società cambi o aggiungi squadra (ognuna ha il suo foglio Google).</span></div>
+<div class="row"><span><b>Correzioni:</b> in Azioni → Correggi o elimina azioni; per le partite vecchie richiamale prima dall’archivio, poi premi Salva partita e invia.</span></div>
 <button class="cancel" id="bVis2">⚙ Scegli fondamentali ed esiti da mostrare</button>
 <button class="${S.leg?"g":""} cancel" id="lgt">Striscia legenda sempre visibile: ${S.leg?"sì":"no"}</button><button class="cancel" data-x="1">Chiudi</button>`)}
 function legRep(){return `<div style="margin-top:8px;font-size:11px"><b>Legenda:</b> ${LEGP.map(([k,t])=>`<span style="border-left:10px solid ${RC[k]};padding:0 8px 0 4px;margin-right:6px">${t}</span>`).join("")} · Pt+ punti fatti, Pt− punti persi · PT punto, ERR errore, DIF attacco difeso, MUR murato · Indice = (punti − errori) ÷ (punti + errori)</div>`}

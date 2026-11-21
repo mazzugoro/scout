@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const SHEET_TITLE="Scout Panchina";
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
@@ -205,20 +205,35 @@ try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>
 const IN_FRAME=(()=>{try{return window.top!==window}catch(e){return true}})();
 function stopFrame(){try{document.open();document.write("<!doctype html><title>ok</title>");document.close()}catch(e){}}
 (function(){const h=location.hash||"";if(h.indexOf("access_token=")<0){if(IN_FRAME&&h.indexOf("error=")>=0)stopFrame();return}
- const p=new URLSearchParams(h.slice(1));let st=null;try{st=sessionStorage.getItem("scoutOAuthState")}catch(e){}
- if(p.get("access_token")&&(!st||p.get("state")===st)){TOK=p.get("access_token");TEXP=Date.now()+(+p.get("expires_in")||3600)*1000;saveTok()}
+ const p=new URLSearchParams(h.slice(1));let st=null;try{st=localStorage.getItem("scoutOAuthState")}catch(e){}
+ if(p.get("access_token")&&(!st||p.get("state")===st)){TOK=p.get("access_token");TEXP=Date.now()+(+p.get("expires_in")||3600)*1000;saveTok();try{localStorage.setItem("scoutGoo","1")}catch(e){}
+  if(String(p.get("state")||"").indexOf("tab-")===0&&!IN_FRAME){
+   const back=location.origin+location.pathname.replace(/index\.html$/,"");
+   document.open();document.write('<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Google collegato</title></head><body style="font-family:sans-serif;text-align:center;padding:48px 20px"><h2>Google collegato ✓</h2><p>Torno all’app…</p><p><a href="'+back+'">Se non succede nulla, tocca qui</a></p></body></html>');document.close();
+   setTimeout(()=>{location.replace(back)},900);return}}
  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
  if(IN_FRAME)stopFrame()})();
 const redirUri=()=>location.origin+location.pathname.replace(/index\.html$/,"");
 function redirectLogin(){
- const st=Math.random().toString(36).slice(2);try{sessionStorage.setItem("scoutOAuthState",st)}catch(e){}
+ const st=Math.random().toString(36).slice(2);try{localStorage.setItem("scoutOAuthState",st)}catch(e){}
  const ru=location.origin+location.pathname.replace(/index\.html$/,"");
  location.href="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:ru,response_type:"token",scope:SCOPES,state:st,include_granted_scopes:"true",prompt:"select_account"})}
 try{SHID=localStorage.getItem("scoutSheetId")}catch(e){}
+const isStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){return false}};
+function pullTok(){try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>Date.now()+60000&&o.e>TEXP){TOK=o.t;TEXP=o.e;return true}}catch(e){}return false}
+function tabLogin(){return new Promise((ok,ko)=>{
+ const st="tab-"+Math.random().toString(36).slice(2);
+ try{localStorage.setItem("scoutOAuthState",st)}catch(e){}
+ const url="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:redirUri(),response_type:"token",scope:SCOPES,state:st,include_granted_scopes:"true",prompt:"select_account"});
+ const w=window.open(url,"_blank");
+ if(!w)return ko(new Error("Non riesco ad aprire la pagina di accesso di Google: consenti i popup"));
+ const t0=Date.now(),iv=setInterval(()=>{
+  if(pullTok()){clearInterval(iv);return ok(TOK)}
+  if(Date.now()-t0>180000){clearInterval(iv);ko(new Error("Accesso non completato"))}},500)})}
 function silentRefresh(ms){return new Promise(ok=>{
  if(IN_FRAME||!document.body||navigator.onLine===false)return ok(false);
  const before=TEXP,st=Math.random().toString(36).slice(2);
- try{sessionStorage.setItem("scoutOAuthState",st)}catch(e){}
+ try{localStorage.setItem("scoutOAuthState",st)}catch(e){}
  const f=document.createElement("iframe");f.style.cssText="display:none;width:0;height:0;border:0";
  f.src="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:redirUri(),response_type:"token",scope:SCOPES,state:st,prompt:"none",include_granted_scopes:"true"});
  const t0=Date.now(),iv=setInterval(()=>{
@@ -228,7 +243,8 @@ function silentRefresh(ms){return new Promise(ok=>{
 async function auth(interactive){
  if(TOK&&Date.now()<TEXP-60000)return TOK;
  let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
- if(was||interactive){if(await silentRefresh(interactive?4000:8000))return TOK}
+ if(interactive&&isStandalone())return tabLogin();
+ if(was||interactive){if(await silentRefresh(interactive?2500:8000))return TOK}
  return authGis(interactive)}
 function authGis(interactive){return new Promise((ok,ko)=>{
  if(TOK&&Date.now()<TEXP-60000)return ok(TOK);
@@ -287,9 +303,10 @@ async function googleLogin(b){
 function gooLbl(){const b=document.getElementById("bGoo");if(!b||b.dataset.busy)return;let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
  b.textContent=TOK&&TEXP>Date.now()?"G ✓":(was?"G !":"G")}
 if(!IN_FRAME){
- setInterval(()=>{let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+ window.addEventListener("storage",e=>{if(e.key==="scoutTok"){pullTok();gooLbl()}});
+ setInterval(()=>{pullTok();let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
   if(was&&(!TOK||TEXP-Date.now()<12*60000))silentRefresh(8000).then(gooLbl);else gooLbl()},60000);
- document.addEventListener("visibilitychange",()=>{let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden){pullTok();gooLbl()}let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
   if(!document.hidden&&was&&(!TOK||TEXP-Date.now()<12*60000))silentRefresh(8000).then(gooLbl)});
  setTimeout(()=>{let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}if(was&&(!TOK||TEXP<Date.now()+60000))silentRefresh(8000).then(gooLbl);else gooLbl()},1500)}
 const claude={use:async k=>{
@@ -395,7 +412,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v19 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v20 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">

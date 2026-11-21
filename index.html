@@ -191,9 +191,15 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
-const SHEET_TITLE="Scout Panchina";
+const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
+const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
+const skey=()=>keyOf(ACT),sidKey=()=>sidOf(ACT);
+function profs(){try{const a=JSON.parse(localStorage.getItem("scoutProfiles")||"null");if(a&&a.length)return a}catch(e){}return[{id:"p1",name:""}]}
+function setProfs(a){try{localStorage.setItem("scoutProfiles",JSON.stringify(a))}catch(e){}}
+const profName=()=>{const p=profs().find(x=>x.id===ACT);return p?p.name:""};
+const sheetTitle=()=>ACT==="p1"?"Scout Panchina":"Scout Panchina - "+(profName()||ACT);
 const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
 const SCHEDE={scouting:["ID Azione","ID Partita","ID Atleta","Squadra","Categoria","Fondamentale","Esito","Alzata_Direzione","Ruolo","Set","Orario"],
  Partite:["ID Partita","Data","Squadra","Avversario","Categoria","Casa/Fuori","Note","Risultato","Set1","Set2","Set3","Set4","Set5"],
@@ -218,7 +224,7 @@ function redirectLogin(){
  const st=Math.random().toString(36).slice(2);try{localStorage.setItem("scoutOAuthState",st)}catch(e){}
  const ru=location.origin+location.pathname.replace(/index\.html$/,"");
  location.href="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:ru,response_type:"token",scope:SCOPES,state:st,include_granted_scopes:"true",prompt:"select_account"})}
-try{SHID=localStorage.getItem("scoutSheetId")}catch(e){}
+try{SHID=localStorage.getItem(sidKey())}catch(e){}
 const isStandalone=()=>{try{return matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){return false}};
 function pullTok(){try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>Date.now()+60000&&o.e>TEXP){TOK=o.t;TEXP=o.e;return true}}catch(e){}return false}
 function tabLogin(){return new Promise((ok,ko)=>{
@@ -264,15 +270,15 @@ async function api(url,opt){
  return r.json()}
 async function ensureSheet(){
  if(SHID)return SHID;
- const q=encodeURIComponent("name='"+SHEET_TITLE+"' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
+ const q=encodeURIComponent("name='"+sheetTitle().replace(/'/g,"\\'")+"' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
  const l=await api("https://www.googleapis.com/drive/v3/files?q="+q+"&fields=files(id)");
  if(l.files&&l.files.length)SHID=l.files[0].id;
  else{
-  const body={properties:{title:SHEET_TITLE},sheets:Object.keys(SCHEDE).map(n=>({properties:{title:n,gridProperties:{frozenRowCount:1}},
+  const body={properties:{title:sheetTitle()},sheets:Object.keys(SCHEDE).map(n=>({properties:{title:n,gridProperties:{frozenRowCount:1}},
    data:[{startRow:0,startColumn:0,rowData:[{values:SCHEDE[n].map(h=>({userEnteredValue:{stringValue:h}}))}]}]}))};
   const c=await api("https://sheets.googleapis.com/v4/spreadsheets",{method:"POST",body:JSON.stringify(body)});
   SHID=c.spreadsheetId}
- try{localStorage.setItem("scoutSheetId",SHID)}catch(e){}
+ try{localStorage.setItem(sidKey(),SHID)}catch(e){}
  return SHID}
 const enc=encodeURIComponent,VB="https://sheets.googleapis.com/v4/spreadsheets/";
 async function gs(fn,a){a=a||{};
@@ -329,10 +335,10 @@ const F={
 };
 const FK=Object.keys(F);
 let S={set:1,rot:1,partita:Math.random().toString(16).slice(2,10),squadra:"",cat:"",avv:"",data:"",cf:"casa",note:"",rows:[],lineup:ROSTER.filter(p=>p.inCampo).map(p=>p.id)};
-try{const s=localStorage.getItem("scoutS");if(s)S=Object.assign(S,JSON.parse(s))}catch(e){}
+try{const s=localStorage.getItem(skey());if(s)S=Object.assign(S,JSON.parse(s))}catch(e){}
 if(S.roster&&S.roster.length)ROSTER=S.roster;
 const $=id=>document.getElementById(id);
-const save=()=>{S.roster=ROSTER;try{localStorage.setItem("scoutS",JSON.stringify(S))}catch(e){}try{sched()}catch(e){}};
+const save=()=>{S.roster=ROSTER;try{localStorage.setItem(skey(),JSON.stringify(S))}catch(e){}try{const a=profs(),p=a.find(x=>x.id===ACT);if(S.squadra&&(!p||p.name!==S.squadra)){if(p)p.name=S.squadra;else a.push({id:ACT,name:S.squadra});setProfs(a)}}catch(e){}try{sched()}catch(e){}};
 const pid=id=>ROSTER.find(p=>p.id===id);
 const inCat=p=>!S.cat||!p.cats||!p.cats.length||p.cats.includes(S.cat);
 const ROc=()=>ROSTER.filter(inCat);
@@ -412,9 +418,9 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v20 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v21 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
- <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||"")}" placeholder="es. VOLLEY ROMA">
+ <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
  <button class="g cancel" id="supOk">Inizia</button><div class="sm" id="supErr" style="color:#dc2626"></div>`);
  $("supGoo").onclick=async e=>{await googleLogin(e.target);e.target.textContent=TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)";if(S.squadra)$("supSq").value=S.squadra;if(S.cat)$("supCat").value=S.cat};
@@ -431,6 +437,28 @@ function setupSheet(){
  }
 }
 function cats(){stash();return[...new Set([...(S.cats||[]),S.cat,...Object.values(S.matches).map(o=>o.cat)].map(c=>String(c||"").trim()).filter(Boolean))]}
+function switchProf(id){try{save()}catch(e){}try{localStorage.setItem("scoutActive",id)}catch(e){}location.reload()}
+function profSheet(msg){
+ const a=profs();if(!a.some(x=>x.id===ACT))a.push({id:ACT,name:S.squadra||""});
+ open(`<h2>Squadre / società</h2><div class="sm">Ogni squadra ha i propri dati sul telefono e il proprio foglio Google (con lo stesso account). Puoi passare dall’una all’altra quando vuoi: i dati non si perdono.</div>
+ ${a.map(p=>`<div class="row ${p.id===ACT?"in":""}"><span>${E(p.id===ACT?(S.squadra||p.name||"Senza nome"):(p.name||"Senza nome"))}${p.id===ACT?" · in uso":""}</span><span style="display:flex;gap:6px">${p.id===ACT?"":`<button class="g" data-po="${p.id}" style="padding:6px 10px">Apri</button><button class="r" data-pd="${p.id}" style="padding:6px 10px">Elimina</button>`}</span></div>`).join("")}
+ <div class="sm">Nuova squadra o società</div>
+ <input id="pnn" placeholder="es. Volley Roma, Società B">
+ <button class="g cancel" id="pnb">＋ Crea e apri</button>
+ <div class="sm" style="color:#b45309">${E(msg||"")}</div>
+ <button class="cancel" data-x="1">Chiudi</button>`);
+ document.querySelectorAll("[data-po]").forEach(b=>b.onclick=()=>switchProf(b.dataset.po));
+ document.querySelectorAll("[data-pd]").forEach(b=>b.onclick=()=>{
+  if(!b.dataset.c){b.dataset.c=1;b.textContent="Sicuro?";return}
+  const id=b.dataset.pd;
+  setProfs(profs().filter(x=>x.id!==id));
+  try{localStorage.removeItem(keyOf(id));localStorage.removeItem(sidOf(id))}catch(e){}
+  profSheet("Eliminata dal telefono ✓ (il foglio Google resta nel tuo Drive)")});
+ $("pnb").onclick=()=>{
+  const n=$("pnn").value.trim();if(!n){profSheet("Scrivi il nome della squadra.");return}
+  const l=profs();if(!l.some(x=>x.id===ACT))l.push({id:ACT,name:S.squadra||""});
+  const id="p"+Date.now().toString(36);l.push({id,name:n});setProfs(l);switchProf(id)}
+}
 function catCount(c){stash();const m=Object.entries(S.matches||{}).filter(([k,o])=>o.cat===c&&((o.rows&&o.rows.length)||o.avv)).length;return{m,a:ROSTER.filter(p=>(p.cats||[]).includes(c)).length}}
 function renCat(o,n){
  n=String(n||"").trim();if(!n||n===o)return false;
@@ -962,7 +990,8 @@ function matchTsv(){const x=res();const d=S.data?S.data.split("-").reverse().joi
 function matchSheet(){
  if(!S.data){const d=new Date();S.data=d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate())}
  const x=res(),v=k=>String(S[k]||"").replace(/"/g,"&quot;");
- open(`<h2>Dati partita</h2>${gooRow()}<button class="g cancel" id="ss">💾 Salva partita e invia</button>
+ open(`<h2>Dati partita</h2>${gooRow()}
+ <button class="cancel" id="pfb">🏐 Squadre / società: cambia o aggiungi</button><button class="g cancel" id="ss">💾 Salva partita e invia</button>
  <div class="sm">Avversario</div><input data-k="avv" value="${v("avv")}" placeholder="es. BIMONT">
  <div class="sm">Data</div><input type="date" data-k="data" value="${v("data")}">
  <div class="opts"><button class="${S.cf==="casa"?"g":""}" data-cf="casa">Casa</button><button class="${S.cf==="fuori"?"g":""}" data-cf="fuori">Fuori</button></div>
@@ -978,6 +1007,7 @@ function matchSheet(){
  <button class="cancel" id="vpb">⚙ Colonne da stampare nel PDF</button>
  <button class="r cancel" id="nm">Nuova partita (questa resta in archivio)</button>
  <button class="cancel" data-x="1">Fatto</button>`);
+ $("pfb").onclick=()=>profSheet();
  $("cmg").onclick=()=>catSheet();
  $("nb").onclick=()=>{const c=$("nc").value.trim();if(!c)return;S.cats=cats();if(!S.cats.includes(c))S.cats.push(c);S.cat=c;save();render();matchSheet()};
  $("nm").onclick=()=>{if($("nm").dataset.c){stash();S.partita=uid();S.rows=[];S.sent={};S.set=1;S.rot=1;S.avv="";S.data="";S.note="";render();matchSheet()}else{$("nm").dataset.c=1;$("nm").textContent="Tocca ancora per confermare"}};

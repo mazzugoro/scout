@@ -191,7 +191,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -208,6 +208,7 @@ let TOK=null,TEXP=0,SHID=null;
 function saveTok(){try{localStorage.setItem("scoutTok",JSON.stringify({t:TOK,e:TEXP}))}catch(e){}}
 try{const o=JSON.parse(localStorage.getItem("scoutTok")||"null");if(o&&o.t&&o.e>Date.now()+60000){TOK=o.t;TEXP=o.e}}catch(e){}
 /* ritorno dall'accesso a tutta pagina: il token arriva nel frammento dell'indirizzo */
+try{if(location.search.indexOf("sw=")>=0)history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
 const IN_FRAME=(()=>{try{return window.top!==window}catch(e){return true}})();
 function stopFrame(){try{document.open();document.write("<!doctype html><title>ok</title>");document.close()}catch(e){}}
 (function(){const h=location.hash||"";if(h.indexOf("access_token=")<0){if(IN_FRAME&&h.indexOf("error=")>=0)stopFrame();return}
@@ -418,7 +419,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v21 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v22 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -437,7 +438,11 @@ function setupSheet(){
  }
 }
 function cats(){stash();return[...new Set([...(S.cats||[]),S.cat,...Object.values(S.matches).map(o=>o.cat)].map(c=>String(c||"").trim()).filter(Boolean))]}
-function switchProf(id){try{save()}catch(e){}try{localStorage.setItem("scoutActive",id)}catch(e){}location.reload()}
+function switchProf(id){
+ try{save()}catch(e){}try{localStorage.setItem("scoutActive",id)}catch(e){}
+ try{document.activeElement&&document.activeElement.blur()}catch(e){}
+ try{$("sh").classList.remove("show")}catch(e){}
+ setTimeout(()=>{location.replace(location.pathname+"?sw="+Date.now())},350)}
 function profSheet(msg){
  const a=profs();if(!a.some(x=>x.id===ACT))a.push({id:ACT,name:S.squadra||""});
  open(`<h2>Squadre / società</h2><div class="sm">Ogni squadra ha i propri dati sul telefono e il proprio foglio Google (con lo stesso account). Puoi passare dall’una all’altra quando vuoi: i dati non si perdono.</div>
@@ -1285,6 +1290,11 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 migPos();
 render();
 try{const gb=$("bGoo");if(gb&&TOK)gb.textContent="G ✓"}catch(e){}
+function fixNav(){const n=document.querySelector("nav");if(!n)return;const d=document.documentElement,b=document.body;
+ d.style.height=b.style.height="";
+ if(n.getBoundingClientRect().bottom>innerHeight+2){d.style.height=b.style.height=innerHeight+"px"}}
+addEventListener("resize",()=>setTimeout(fixNav,200));addEventListener("pageshow",()=>setTimeout(fixNav,200));
+setTimeout(fixNav,300);setTimeout(fixNav,1200);setTimeout(fixNav,3000);
 gs("config").then(c=>{const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat}).catch(()=>{}).then(()=>{if(!S.squadra||!S.cat)setupSheet();else{S.cats=cats();if(!S.onboarded&&ROSTER.length)S.onboarded=true;save();render();if(!S.onboarded)atlSetup()}});
 </script>
 <script>

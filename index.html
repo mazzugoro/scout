@@ -204,7 +204,7 @@ nav{z-index:10}#rp{bottom:var(--navH,64px)}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -245,8 +245,8 @@ function tabLogin(){return new Promise((ok,ko)=>{
  const st="tab-"+Math.random().toString(36).slice(2);
  try{localStorage.setItem("scoutOAuthState",st)}catch(e){}
  const url="https://accounts.google.com/o/oauth2/v2/auth?"+new URLSearchParams({client_id:CLIENT_ID,redirect_uri:redirUri(),response_type:"token",scope:SCOPES,state:st,include_granted_scopes:"true",prompt:"select_account"});
- const w=window.open(url,"_blank");
- if(!w)return ko(new Error("Non riesco ad aprire la pagina di accesso di Google: consenti i popup"));
+ let w=null;try{w=window.open(url,"_blank")}catch(e){}
+ if(!w){redirectLogin();return}
  const t0=Date.now(),iv=setInterval(()=>{
   if(pullTok()){clearInterval(iv);return ok(TOK)}
   if(Date.now()-t0>180000){clearInterval(iv);ko(new Error("Accesso non completato"))}},500)})}
@@ -278,7 +278,11 @@ function authGis(interactive){return new Promise((ok,ko)=>{
  tc.requestAccessToken({prompt:interactive?"select_account":""})})}
 async function api(url,opt){
  const t=await auth(false);
- const r=await fetch(url,Object.assign({headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"}},opt||{}));
+ let r=null,ne=null;
+ for(let i=0;i<4;i++){
+  try{r=await fetch(url,Object.assign({headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"}},opt||{}));ne=null;break}
+  catch(e){ne=e;await new Promise(z=>setTimeout(z,700*(i+1)))}}
+ if(ne)throw new Error("Connessione non disponibile: riprova tra qualche secondo");
  if(r.status===401){TOK=null}
  if(!r.ok)throw new Error("Google "+r.status);
  return r.json()}
@@ -343,7 +347,7 @@ async function googleLogin(b){
   try{const old=accTxt(),nw=await fetchAcc();if(old&&nw&&old!==nw){profs().forEach(p=>{try{localStorage.removeItem(sidOf(p.id))}catch(e){}});SHID=null;alert("Hai collegato un account diverso ("+nw+"): l’app userà i fogli di questo account.")}}catch(e){}
   try{const n=addFound(await findTeams());if(n)alert("Ho trovato altre "+n+" squadre nel tuo Google Drive. Le trovi in Partita → Squadre / società.")}catch(e){}
   try{const c=await gs("config");const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat;save();render()}catch(e){}
- }catch(e){b.textContent="G !";alert("Accesso non riuscito: "+((e&&e.message)||e))}}
+ }catch(e){b.textContent=(TOK&&TEXP>Date.now())?"G ✓":"G !";alert((TOK&&TEXP>Date.now()?"Account collegato, ma ":"Accesso non riuscito: ")+((e&&e.message)||e))}}
 function gooLbl(){const b=document.getElementById("bGoo");if(!b||b.dataset.busy)return;let was=false;try{was=localStorage.getItem("scoutGoo")==="1"}catch(e){}
  b.textContent=TOK&&TEXP>Date.now()?"G ✓":(was?"G !":"G")}
 if(!IN_FRAME){
@@ -456,7 +460,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v30 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v31 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -573,13 +577,23 @@ function tips(m,tm,best){const t=[],L=FD.map(([n,fn])=>{const a=fn(m);return{n,a
  if(best)t.push(`Rende meglio in posizione <b>${best.s}</b> (${fmt(best.r)} su ${best.N} azioni)`);
  return t.length?t.map(x=>`<div class="row">${x}</div>`).join(""):'<div class="sm">Servono più azioni (almeno 5 per fondamentale) per dare suggerimenti.</div>'}
 function mkRows(v){return v.map(r=>{const p=pid(r[2]);return{id:r[0],atleta:r[2],nome:r[2]===OPP?"Avversario":(p?p.n:"?"),f:r[5],e:r[6],pt:ptOf(r[2],r[5],r[6]),rot:1,pos:r[8]||"",set:+r[9]||1,t:r[10]||""}})}
+function mvpOf(rows){
+ const by={};rows.filter(r=>r.atleta!==OPP).forEach(r=>{(by[r.atleta]=by[r.atleta]||[]).push(r)});
+ let best=null;
+ Object.keys(by).forEach(id=>{const m=mt(by[id]),sc=m.pp-m.pm;
+  if(!best||sc>best.sc||(sc===best.sc&&m.pp>best.pp))best={id,sc,pp:m.pp,pm:m.pm}});
+ if(!best||best.pp<=0)return null;
+ const p=pid(best.id);best.n=p?p.n:"?";best.num=p?p.num:"";return best}
+const mvpTxt=b=>b?"#"+(b.num===""?"–":b.num)+" "+b.n+" · "+b.pp+" punti, "+b.pm+" errori (saldo "+(b.sc>0?"+":"")+b.sc+")":"nessuno";
 function statsSheet(msg){
  const M=allMc(),rs=M.flatMap(o=>o.rows).filter(r=>r.atleta!==OPP);
  const L=[...new Set(rs.map(r=>r.atleta))].map(id=>{const m=mt(rs.filter(r=>r.atleta===id)),p=pid(id);return{id,n:p?p.n:"?",num:p?p.num:"",N:m.tot,r:rend(m)}}).sort((a,b)=>b.N-a.N);
  open(`<h2>Statistiche atleta</h2><div class="sm">${ST.cat?E(ST.cat)+" · ":""}${M.length} partite · ${rs.length} azioni${msg?" · "+msg:""}</div>
  ${cats().length>1?`<div class="opts"><button class="${!ST.cat?"g":""}" data-sc="">Tutte</button>${cats().map(c=>`<button class="${ST.cat===c?"g":""}" data-sc="${E(c)}">${E(c)}</button>`).join("")}</div>`:""}
  ${L.map(x=>`<button class="row" style="width:100%;text-align:left" data-pl="${x.id}"><span>#${x.num===""?"–":x.num} ${E(x.n)} <span class="sm">${x.N} azioni</span></span><b>${fmt(x.r)}</b></button>`).join("")||'<div class="sm">Nessuna azione registrata</div>'}
+ ${M.length>0?`<div class="sm">MVP di ogni partita</div>${M.slice().sort((a,b)=>String(b.data||"").localeCompare(String(a.data||""))).map(o=>{const b=mvpOf(o.rows);return b?`<div class="row"><span>${E(fd(o.data)||"")} · ${E(o.avv||"Avversario")}<br><span class="sm">⭐ ${E(mvpTxt(b))}</span></span></div>`:""}).join("")}`:""}
  <button class="g cancel" id="la">☁ Carica tutto lo storico dall’archivio</button>
+ <div class="sm">MVP di una partita = miglior saldo punti − errori in quella partita (a parità, più punti). Non c’è un MVP globale.</div>
  <div class="sm">${ST.full?"Rendimento = (punti − errori) ÷ azioni totali.":"Indice = (punti − errori) ÷ (punti + errori): usa solo le azioni decisive."}</div>
  <button class="cancel" data-x="1">Chiudi</button>`);
  $("la").onclick=loadAll;
@@ -1138,7 +1152,7 @@ function report(){
  const sets=[1,2,3,4,5].filter(n=>S.rows.some(r=>r.set===n));
  const bar=`<div class="bar noprint"><button id="rpp">⬇ Scarica PDF</button><button id="rpd">Dettaglio set: ${DET?"sì":"no"}</button><button id="rpe">Efficienza atleti: ${EFFP?"sì":"no"}</button>${EFFP?`<button id="rpn">Azioni non decisive: ${EFFN?"sì":"no"}</button>`:""}<button id="rpi">Miglioramenti: ${IMP?"sì":"no"}</button><button id="rpl">Legenda: ${LEGR?"sì":"no"}</button><button id="rpx">Chiudi</button></div>`;
  const head=`<h1>${S.cf==="casa"?E(S.squadra)+" – "+E(S.avv||"Avversario"):E(S.avv||"Avversario")+" – "+E(S.squadra)} <span style="font-weight:400;font-size:14px">${d} · ${E(S.cf)} · ${E(S.cat)}${S.note?" · "+E(S.note):""}</span></h1><div><b>Risultato ${hs(x.r.split("-")).join("-")}</b> (${HN()} – ${AN()}) · ${sets.map(n=>`Set ${n}: ${hs(pts(n)).join("-")}`).join(" | ")||"nessun set"} &nbsp;·&nbsp; <b>Battute err ${erc(S.rows)[0]}</b> · <b>Attacchi err ${erc(S.rows)[1]}</b></div>`;
- const one=`<section class="pg">${head}<h2>Totale partita per atleta</h2>${tbl(S.rows)}<h2>Risultati per set</h2>${setTbl()}${LEGR?legRep():""}</section>`;
+ const one=`<section class="pg">${head}<p style="font-size:14px;margin:6px 0"><b>★ MVP:</b> ${E(mvpTxt(mvpOf(S.rows)))}</p><h2>Totale partita per atleta</h2>${tbl(S.rows)}<h2>Risultati per set</h2>${setTbl()}${LEGR?legRep():""}</section>`;
  const det=DET?sets.map(n=>`<section class="pg"><h2>Set ${n} – ${hs(pts(n)).join("-")}</h2>${tbl(S.rows.filter(r=>r.set===n))}</section>`).join(""):"";
  const effs=EFFP?`<section class="pg"><h2>Efficienza per atleta – questa partita</h2>${EFFN?effTblC(S.rows):effTbl(S.rows)}<p class="nt">${EFFN?"Con le azioni non decisive incluse: Eff = (positivi − errori) ÷ azioni registrate; Rend = (punti − errori) ÷ azioni totali. In Attacco gli errori comprendono le murate. Le azioni non decisive possono essere incomplete, quindi leggi i valori con cautela. ":""}Indice = (punti − errori) ÷ (punti + errori), solo azioni decisive: punti, ace, muri vincenti, errori, murate subite. Bil = punti − errori. Ric/Dif = errori registrati.</p></section>`:"";
  $("rp").innerHTML=bar+one+det+effs+(IMP?impSec(S.rows):"");$("rp").style.display="block";

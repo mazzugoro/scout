@@ -96,6 +96,7 @@ In **Formazione**, apri la scheda dell'atleta e scegli la **Foto** (galleria o f
 - **Salva partita e invia**: manda al foglio azioni, riga della partita e atlete. Senza rete o senza collegamento, la partita resta sul telefono; invia quando puoi.
 - **Stampa**: PDF di una pagina (A4 orizzontale) con tabella per atleta e risultati per set. Scegli le colonne da stampare in *Esporta* → **⚙ Colonne da stampare nel PDF**.
 - **Statistiche**: modalità **Globale** (partita per partita) o **Singola partita** (set per set). Per default contano solo le azioni decisive; l'indice è (punti − errori) ÷ (punti + errori).
+- **MVP**: in *Statistiche* compare il miglior giocatore (⭐) per la categoria scelta o per tutte le partite, e l'MVP di ogni partita. Si calcola con il saldo **punti − errori** (a parità, più punti). L'MVP della partita compare anche nel PDF. Conta solo chi ha almeno un punto.
 - Il **backup in testo** (in *Esporta*) serve a recuperare i dati se qualcosa va storto.
 
 ## B9. Schermo
@@ -107,6 +108,7 @@ Telefono e altro dispositivo con lo stesso account condividono i dati tramite il
 |---|---|
 | **G !** o "Google non collegato" | Tocca **G** e scegli l'account. I dati sul telefono non si perdono. |
 | La pagina di accesso non si apre | Apri l'app dal browser Chrome e consenti i popup per il sito. |
+| Su Android, dall'app installata G dà errore | Aggiorna l'app all'ultima versione. Se l'apertura della scheda di accesso è bloccata, l'app passa all'accesso a tutta pagina. Se persiste, accedi una volta dal browser Chrome (stesso link) e poi riapri l'app. |
 | Dopo l'accesso la pagina sembra "desktop" | Chrome ⋮ → togli la spunta a **Sito desktop**; chiudi e riapri l'app. |
 | Mancano i tasti in basso | Chiudi del tutto l'app e riaprila. |
 | Versione vecchia dopo un aggiornamento | Chiudi l'app, riaprila con la rete, poi chiudila e riaprila ancora. |

@@ -1,5 +1,5 @@
 /* Scout Panchina: uso offline. Cambia VERSION a ogni aggiornamento dei file. */
-const VERSION = "scout-v24-1";
+const VERSION = "scout-v25-1";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

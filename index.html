@@ -162,9 +162,45 @@ main{min-height:0;overflow:hidden;position:relative}
 .tile .pl.ph,.cv .tile .pl.ph{flex:0 0 auto!important;min-height:0!important;padding:4px 8px!important}
 .zc .av{display:block;margin:0 auto 2px;width:26px;height:26px}
 h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
+/* barra dei tasti fissa in basso, sempre usabile */
+body{padding-bottom:var(--navH,64px)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--bg);border-top:1px solid var(--bd);padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+.sheet{bottom:var(--navH,64px)}
+/* modalità tablet (automatica o scelta a mano) */
+html.tab header,html.tab main{max-width:1180px;width:100%;margin-left:auto;margin-right:auto}
+html.tab header{padding:10px 16px;gap:8px}
+html.tab main{padding:0 16px 8px;gap:10px}
+html.tab .mi{font-size:17px;padding:10px 14px}
+html.tab .sets button{padding:12px 0;font-size:16px}
+html.tab .big{font-size:56px}html.tab .big small{font-size:16px}
+html.tab .er{font-size:16px;line-height:1.5}html.tab .er b{font-size:20px}
+html.tab nav{padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));gap:12px}
+html.tab nav button{font-size:18px;padding:16px 0}
+html.tab .grid{flex:0 0 auto;min-height:0;grid-auto-rows:auto;gap:10px}
+html.tab .grid:not(.cv){grid-template-columns:repeat(3,1fr)}
+html.tab .tile .pl{min-height:64px!important;padding:6px 10px!important}
+html.tab .tile .pl b{font-size:26px}html.tab .tile .pl span{font-size:15px}
+html.tab .tile .mini{flex:0 0 auto;min-height:48px}
+html.tab .mini button{min-height:48px;font-size:13px}
+html.tab .cv .pl b{font-size:24px}html.tab .cv .pl span{font-size:14px}
+html.tab .pl.ph .av{width:52px;height:52px}
+html.tab .opp button{padding:16px 8px;font-size:17px}
+html.tab .last{font-size:15px}html.tab .last button{padding:12px 18px;font-size:16px}
+@media (orientation:landscape){html.tab .grid:not(.cv){grid-template-columns:repeat(4,1fr)}}
+html.tab .sheet{align-items:center;justify-content:center}
+html.tab .panel{max-width:780px;border-radius:22px;max-height:92%;padding:20px;gap:12px}
+html.tab .panel h2{font-size:24px}
+html.tab .row{font-size:18px;padding:14px}
+html.tab .row .av{width:40px;height:40px}
+html.tab .sm{font-size:15px}
+html.tab textarea,html.tab input,html.tab select{font-size:18px;padding:13px}
+html.tab .cancel{font-size:18px;padding:17px}
+html.tab .opts button{font-size:24px;padding:30px 8px}
+html.tab .opts.three button{font-size:20px;padding:26px 4px}
+html.tab .st{font-size:16px}html.tab .st th,html.tab .st td{padding:9px 4px}
 </style></head><body>
 <header>
- <div style="display:flex;gap:6px"><button class="mi" id="mi" style="flex:1"></button><button class="mi" id="bView" style="padding:2px 12px"></button><button class="mi" id="bLeg" style="padding:2px 12px">?</button><button class="mi" id="bVis" style="padding:2px 12px">⚙</button><button class="mi" id="bGoo" style="padding:2px 10px">G</button><button id="bLock" style="display:none"></button></div>
+ <div style="display:flex;gap:6px"><button class="mi" id="mi" style="flex:1"></button><button class="mi" id="bView" style="padding:2px 12px"></button><button class="mi" id="bLeg" style="padding:2px 12px">?</button><button class="mi" id="bVis" style="padding:2px 12px">⚙</button><button class="mi" id="bGoo" style="padding:2px 10px">G</button><button class="mi" id="bMode" style="padding:2px 10px"></button><button id="bLock" style="display:none"></button></div>
  <div class="sets" id="sets"></div>
  <div class="score">
   <div class="big" id="sc">0 – 0<small>NOI – LORO</small></div>
@@ -191,7 +227,7 @@ h2 .av{display:block;margin:0 auto 6px;width:64px;height:64px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -440,7 +476,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v24 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v25 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -777,6 +813,7 @@ function legSheet(){open(`<h2>Legenda</h2><div class="sm">Colore del riquadro = 
 <div class="row"><span><b>Categorie:</b> in Partita puoi aggiungerle, rinominarle o eliminarle; in Statistiche i filtri mostrano una categoria o tutte.</span></div>
 <div class="row"><span><b>Squadre:</b> in Partita → Squadre / società cambi o aggiungi squadra (ognuna ha il suo foglio Google).</span></div>
 <div class="row"><span><b>Correzioni:</b> in Azioni → Correggi o elimina azioni; per le partite vecchie richiamale prima dall’archivio, poi premi Salva partita e invia.</span></div>
+<div class="row"><span><b>Schermo:</b> il tasto ⇄ in alto passa da Auto (riconosce tablet o telefono) a Tablet a Telefono. I tasti Partita, Formazione, Statistiche, Stampa ed Esporta restano fissi in basso. Puoi ruotare lo schermo.</span></div>
 <button class="cancel" id="bVis2">⚙ Scegli fondamentali ed esiti da mostrare</button>
 <button class="${S.leg?"g":""} cancel" id="lgt">Striscia legenda sempre visibile: ${S.leg?"sì":"no"}</button><button class="cancel" data-x="1">Chiudi</button>`)}
 function legRep(){return `<div style="margin-top:8px;font-size:11px"><b>Legenda:</b> ${LEGP.map(([k,t])=>`<span style="border-left:10px solid ${RC[k]};padding:0 8px 0 4px;margin-right:6px">${t}</span>`).join("")} · Pt+ punti fatti, Pt− punti persi · PT punto, ERR errore, DIF attacco difeso, MUR murato · Indice = (punti − errori) ÷ (punti + errori)</div>`}
@@ -1296,7 +1333,7 @@ document.addEventListener("click",e=>{
  else if(d.cc)ccAct(d.cc);
  else if(d.pz){S.pz=+d.pz;render();rotSheet()}
  else if(d.ord){S.ord=d.ord;render();rotSheet()}
- else if(t.id==="bLeg")legSheet();else if(t.id==="bGoo"||t.id==="bGoo2")googleLogin(t);else if(t.id==="bVis"||t.id==="bVis2")visSheet("scout");else if(t.id==="vpb")visSheet("print");
+ else if(t.id==="bLeg")legSheet();else if(t.id==="bMode"){const o=["auto","tab","tel"];try{localStorage.setItem("scoutMode",o[(o.indexOf(curMode())+1)%3])}catch(e){}applyMode();render()}else if(t.id==="bGoo"||t.id==="bGoo2")googleLogin(t);else if(t.id==="bVis"||t.id==="bVis2")visSheet("scout");else if(t.id==="vpb")visSheet("print");
  else if(t.id==="lgt"){S.leg=!S.leg;render();legSheet()}
  else if(t.id==="rpl"){LEGR=!LEGR;report()}
  else if(t.id==="bLock")lockSheet();
@@ -1323,8 +1360,17 @@ $("sh").addEventListener("click",e=>{if(e.target.id==="sh")close()});
 document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.k;if(k){S[k]=e.target.value;if(k==="cat")S.lineup=S.lineup.filter(i=>{const p=pid(i);return p&&inCat(p)});save();if(k==="cat")render()}});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 migPos();
+applyMode();
 render();
 try{const gb=$("bGoo");if(gb&&TOK)gb.textContent="G ✓"}catch(e){}
+function curMode(){try{return localStorage.getItem("scoutMode")||"auto"}catch(e){return"auto"}}
+function isTabDev(){return Math.min(screen.width,screen.height)>=600}
+function setNavH(){const n=document.querySelector("nav");if(n)document.documentElement.style.setProperty("--navH",n.offsetHeight+"px")}
+function applyMode(){const m=curMode(),t=m==="tab"||(m==="auto"&&isTabDev());
+ document.documentElement.classList.toggle("tab",t);
+ const b=document.getElementById("bMode");if(b)b.textContent=m==="auto"?"⇄ Auto":(m==="tab"?"⇄ Tablet":"⇄ Telefono");
+ setNavH();setTimeout(setNavH,300);try{fixNav()}catch(e){}}
+addEventListener("resize",()=>{applyMode()});addEventListener("orientationchange",()=>setTimeout(applyMode,300));
 function fixNav(){const n=document.querySelector("nav");if(!n)return;const d=document.documentElement,b=document.body;
  d.style.height=b.style.height="";
  if(n.getBoundingClientRect().bottom>innerHeight+2){d.style.height=b.style.height=innerHeight+"px"}}

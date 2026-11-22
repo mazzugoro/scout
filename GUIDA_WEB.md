@@ -97,7 +97,15 @@ In **Formazione**, apri la scheda dell'atleta e scegli la **Foto** (galleria o f
 - **Statistiche**: modalità **Globale** (partita per partita) o **Singola partita** (set per set). Per default contano solo le azioni decisive; l'indice è (punti − errori) ÷ (punti + errori).
 - Il **backup in testo** (in *Esporta*) serve a recuperare i dati se qualcosa va storto.
 
-## B9. Se qualcosa non funziona
+## B9. Tablet e rotazione
+- L'app riconosce da sola se è su un **tablet** (schermo da 600 px in su) o su un telefono e adatta il layout: riquadri atleti più contenuti, finestre centrate e caratteri più grandi in Formazione, Statistiche e nelle altre finestre.
+- Il pulsante **⇄** in alto cambia modalità: **Auto** → **Tablet** → **Telefono**. La scelta vale per quel dispositivo, non per la squadra.
+- I tasti **Partita, Formazione, Statistiche, Stampa, Esporta** sono **fissi in basso** e restano visibili anche con una finestra aperta.
+- Lo schermo può essere **ruotato** (verticale e orizzontale). Se l'app era già installata, la rotazione può attivarsi solo dopo che Chrome aggiorna l'app (anche un giorno): per averla subito, disinstalla l'app e reinstallala.
+- Telefono e tablet con lo stesso account condividono i dati tramite il foglio Google: **Salva partita e invia** su uno, poi **Importa atlete** e **Richiama altra partita** sull'altro.
+- Su **iPad**: Safari → Condividi → Aggiungi alla schermata Home. L'app installata e Safari non condividono i dati e l'accesso Google può chiedere conferma più spesso.
+
+## B10. Se qualcosa non funziona
 | Problema | Cosa fare |
 |---|---|
 | **G !** o "Google non collegato" | Tocca **G** e scegli l'account. I dati sul telefono non si perdono. |

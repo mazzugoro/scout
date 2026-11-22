@@ -209,6 +209,9 @@ html.tab .pl.ph .av{width:clamp(48px,7vh,72px);height:clamp(48px,7vh,72px)}
 html.tab .opts button{padding:clamp(16px,3vh,30px) 8px;font-size:clamp(18px,2.8vh,26px)}
 html.tab .opts.three button{padding:clamp(14px,2.6vh,26px) 4px;font-size:clamp(16px,2.4vh,22px)}
 html.tab .panel{max-height:96%}
+nav i{font-style:normal}nav .s{display:none}nav button{min-width:0;padding-left:0;padding-right:0}
+@media (max-width:480px){html:not(.tab) nav .f{display:none}html:not(.tab) nav .s{display:inline}html:not(.tab) nav button{font-size:12px}}
+nav{z-index:10}#rp{bottom:var(--navH,64px)}
 </style></head><body>
 <header>
  <div style="display:flex;gap:6px"><button class="mi" id="mi" style="flex:1"></button><button class="mi" id="bView" style="padding:2px 12px"></button><button class="mi" id="bLeg" style="padding:2px 12px">?</button><button class="mi" id="bVis" style="padding:2px 12px">⚙</button><button class="mi" id="bGoo" style="padding:2px 10px">G</button><button class="mi" id="bMode" style="padding:2px 10px"></button><button id="bLock" style="display:none"></button></div>
@@ -230,7 +233,7 @@ html.tab .panel{max-height:96%}
  
  <div class="last"><div id="lastTxt">Nessuna azione</div><button id="undo">↶ Annulla</button></div>
 </main>
-<nav><button id="bMatch">Partita</button><button id="bLine">Formazione</button><button id="bSt">Statistiche</button><button id="bRep">Stampa</button><button id="bLog">Esporta</button></nav>
+<nav><button id="bScout">Scout</button><button id="bMatch">Partita</button><button id="bLine"><i class="f">Formazione</i><i class="s">Formaz.</i></button><button id="bSt"><i class="f">Statistiche</i><i class="s">Stat.</i></button><button id="bRep">Stampa</button><button id="bLog">Esporta</button></nav>
 <div id="rp"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -238,7 +241,7 @@ html.tab .panel{max-height:96%}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -247,7 +250,7 @@ function profs(){try{const a=JSON.parse(localStorage.getItem("scoutProfiles")||"
 function setProfs(a){try{localStorage.setItem("scoutProfiles",JSON.stringify(a))}catch(e){}}
 const profName=()=>{const p=profs().find(x=>x.id===ACT);return p?p.name:""};
 const sheetTitle=()=>ACT==="p1"?"Scout Panchina":"Scout Panchina - "+(profName()||ACT);
-const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓":"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
+const gooRow=()=>`<div class="row"><span>Google: ${TOK?"collegato ✓"+(accTxt()?" · "+E(accTxt()):""):"non collegato (l’app funziona lo stesso)"}</span><button class="${TOK?"":"g"}" id="bGoo2" style="padding:6px 10px">${TOK?"Ricollega":"Collega Google"}</button></div>`;
 const SCHEDE={scouting:["ID Azione","ID Partita","ID Atleta","Squadra","Categoria","Fondamentale","Esito","Alzata_Direzione","Ruolo","Set","Orario"],
  Partite:["ID Partita","Data","Squadra","Avversario","Categoria","Casa/Fuori","Note","Risultato","Set1","Set2","Set3","Set4","Set5"],
  Atleti:["ID Atleta","Nome","Numero","Ruolo","Convocata","Categorie","Foto"],Impostazioni:["Voce","Valore"]};
@@ -370,8 +373,11 @@ async function gs(fn,a){a=a||{};
   if(fn==="setConfig"){await api(VB+id+"/values/"+enc("Impostazioni!A2:B3")+"?valueInputOption=RAW",{method:"PUT",body:JSON.stringify({values:[["Squadra",a.squadra||""],["Categoria",a.cat||""]]})});return{payload:{}}}
  }catch(e){throw{code:(e&&e.message)||"errore"}}
  throw{code:"funzione sconosciuta"}}
+async function fetchAcc(){try{const r=await api("https://www.googleapis.com/drive/v3/about?fields=user(emailAddress,displayName)");const u=r.user||{};const t=u.emailAddress||u.displayName||"";if(t)localStorage.setItem("scoutAcc",t);return t}catch(e){return""}}
+const accTxt=()=>{try{return localStorage.getItem("scoutAcc")||""}catch(e){return""}};
 async function googleLogin(b){
  try{b.textContent="…";await auth(true);await ensureSheet();b.textContent="G ✓";
+  try{const old=accTxt(),nw=await fetchAcc();if(old&&nw&&old!==nw){profs().forEach(p=>{try{localStorage.removeItem(sidOf(p.id))}catch(e){}});SHID=null;alert("Hai collegato un account diverso ("+nw+"): l’app userà i fogli di questo account.")}}catch(e){}
   try{const n=addFound(await findTeams());if(n)alert("Ho trovato altre "+n+" squadre nel tuo Google Drive. Le trovi in Partita → Squadre / società.")}catch(e){}
   try{const c=await gs("config");const v=(c.payload&&c.payload.config)||{};if(v.squadra&&!S.squadra)S.squadra=v.squadra;if(v.cat&&!S.cat)S.cat=v.cat;save();render()}catch(e){}
  }catch(e){b.textContent="G !";alert("Accesso non riuscito: "+((e&&e.message)||e))}}
@@ -487,7 +493,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v26 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v27 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -516,7 +522,7 @@ function switchProf(id){
  setTimeout(()=>{location.replace(location.pathname+"?sw="+Date.now())},350)}
 function profSheet(msg){
  const a=profs();if(!a.some(x=>x.id===ACT))a.push({id:ACT,name:S.squadra||""});
- open(`<h2>Squadre / società</h2><div class="sm">Ogni squadra ha i propri dati sul telefono e il proprio foglio Google (con lo stesso account). Puoi passare dall’una all’altra quando vuoi: i dati non si perdono.</div>
+ open(`<h2>Squadre / società</h2><div class="sm">Account Google: ${E(accTxt()||"non collegato")}</div><div class="sm">Ogni squadra ha i propri dati sul telefono e il proprio foglio Google (con lo stesso account). Puoi passare dall’una all’altra quando vuoi: i dati non si perdono.</div>
  ${a.map(p=>`<div class="row ${p.id===ACT?"in":""}"><span>${E(p.id===ACT?(S.squadra||p.name||"Senza nome"):(p.name||"Senza nome"))}${p.id===ACT?" · in uso":""}</span><span style="display:flex;gap:6px">${p.id===ACT?"":`<button class="g" data-po="${p.id}" style="padding:6px 10px">Apri</button><button class="r" data-pd="${p.id}" style="padding:6px 10px">Elimina</button>`}</span></div>`).join("")}
  <button class="cancel" id="pfind">🔍 Cerca altre squadre nel mio Google Drive</button>
  <div class="sm">Nuova squadra o società</div>
@@ -809,7 +815,8 @@ function visSheet(sc){
  document.querySelectorAll("[data-vt]").forEach(b=>b.onclick=()=>visSheet(b.dataset.vt));
  document.querySelector("[data-vall]").onclick=()=>{S.hid[VSC]=[];save();try{render()}catch(e){}visSheet(VSC)};
 }
-function legSheet(){open(`<h2>Legenda</h2><div class="sm">Colore del riquadro = posizione in campo</div><div style="display:flex;flex-direction:column;gap:6px">${LEGP.map(([k,t])=>`<div class="row r-${k}" style="border:2px solid var(--rc)"><span>${t}</span></div>`).join("")}</div><div class="sm">Pulsanti</div><div class="row"><span><b style="color:#15803d">Verde</b> = punto fatto · <b style="color:#b91c1c">Rosso</b> = punto perso</span></div><div class="row"><span>Tasti piccoli sotto l’atleta = azioni non decisive (Ric ✓, Dif ✓, Att dif, Bat ✓)</span></div><div class="row"><span>P1–P6 = zone del campo (rete in alto); S, C, O, P, L = posizione dell’atleta</span></div><div class="sm">Come si usa</div>
+function legSheet(){open(`<h2>Legenda</h2><div class="sm">Colore del riquadro = posizione in campo</div><div style="display:flex;flex-direction:column;gap:6px">${LEGP.map(([k,t])=>`<div class="row r-${k}" style="border:2px solid var(--rc)"><span>${t}</span></div>`).join("")}</div><div class="sm">Pulsanti</div><div class="row"><span><b style="color:#15803d">Verde</b> = punto fatto · <b style="color:#b91c1c">Rosso</b> = punto perso</span></div><div class="row"><span>Tasti piccoli sotto l’atleta = azioni non decisive (Ric ✓, Dif ✓, Att dif, Bat ✓)</span></div><div class="row"><span>P1–P6 = zone del campo (rete in alto); S, C, O, P, L = posizione dell’atleta</span></div><div class="sm">Account Google collegato</div><div class="row"><span>${E(accTxt()||"nessuno (Google non collegato)")}</span></div>
+<div class="sm">Come si usa</div>
 <div class="row"><span><b>1.</b> Tocca l’atleta, poi il <b>fondamentale</b>, poi l’<b>esito</b>. Nella finestra compaiono solo le azioni che chiudono lo scambio.</span></div>
 <div class="row"><span><b>Fondamentali:</b> Battuta, Ace (battuta vincente), Ricezione, Attacco, Difesa, Muro, Errore (errore generico).</span></div>
 <div class="row"><span><b>Esiti:</b> PUNTO = punto per noi · ERRORE = punto per gli avversari · Murato = attacco bloccato · Difeso = attacco difeso, nessun punto · OK = azione riuscita senza punto.</span></div>
@@ -1306,6 +1313,7 @@ function logSheet(){
  };
  $("rs").onclick=()=>{if($("rs").dataset.c){S.del=S.del||{};S.del[S.partita]=(S.del[S.partita]||[]).concat(S.rows.map(r=>r.id));S.rows=[];S.set=1;S.rot=1;render();close()}else{$("rs").dataset.c=1;$("rs").textContent="Tocca ancora per confermare"}};
 }
+document.addEventListener("click",e=>{const nb=e.target.closest&&e.target.closest("nav button");if(nb){try{$("rp").style.display="none"}catch(x){}}},true);
 document.addEventListener("click",e=>{
  const t=e.target.closest("button,.row");if(!t)return;
  const d=t.dataset;
@@ -1316,6 +1324,7 @@ document.addEventListener("click",e=>{
  else if(t.id==="oa"){add(OPP,"Attacco","Offensivo",-1)}
  else if(t.id==="undo"){const r=S.rows.pop();if(r){S.del=S.del||{};(S.del[S.partita]=S.del[S.partita]||[]).push(r.id)}if(r&&r.snap){S.pz=r.snap.pz;S.srv=r.snap.srv}render()}
  else if(t.id==="bLine")lineupSheet();
+ else if(t.id==="bScout"){$("sh").classList.remove("show")}
  else if(t.id==="bMatch")matchSheet();
  else if(t.id==="bRep")report();
  else if(t.id==="sr")netSheet();
@@ -1374,6 +1383,7 @@ migPos();
 applyMode();
 render();
 try{const gb=$("bGoo");if(gb&&TOK)gb.textContent="G ✓"}catch(e){}
+if(TOK&&TEXP>Date.now()&&!accTxt())fetchAcc();
 function curMode(){try{return localStorage.getItem("scoutMode")||"auto"}catch(e){return"auto"}}
 function isTabDev(){return Math.min(screen.width,screen.height)>=600}
 function setNavH(){const n=document.querySelector("nav");if(n)document.documentElement.style.setProperty("--navH",n.offsetHeight+"px")}

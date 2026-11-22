@@ -53,6 +53,7 @@ Google Cloud (Sheets e Drive API): nessun costo per questo uso. GitHub Pages e N
 4. Con Google collegato, l'app crea da sola il foglio **"Scout Panchina"** nel tuo Drive.
 
 **Il tasto G in alto**
+- Per sapere **con quale account** sei collegata: l'email compare in *Partita* (riga "Google"), nella legenda **?** e in *Squadre / società*. Se colleghi un account diverso, l'app avvisa e usa i fogli del nuovo account.
 - **G ✓** = collegato · **G !** = scaduto, toccalo per rinnovare · **G** = non collegato.
 - Il collegamento dura circa un'ora e l'app lo rinnova da sola in background. Se si scollega (ad esempio dopo molti giorni senza usarla), tocca G e scegli l'account.
 - Senza collegamento puoi comunque fare scout: i dati restano sul telefono e li invii dopo.
@@ -100,7 +101,7 @@ In **Formazione**, apri la scheda dell'atleta e scegli la **Foto** (galleria o f
 ## B9. Tablet e rotazione
 - L'app riconosce da sola se è su un **tablet** (schermo da 600 px in su) o su un telefono e adatta il layout: riquadri atleti più contenuti, finestre centrate e caratteri più grandi in Formazione, Statistiche e nelle altre finestre.
 - Il pulsante **⇄** in alto cambia modalità: **Auto** → **Tablet** → **Telefono**. La scelta vale per quel dispositivo, non per la squadra.
-- I tasti **Partita, Formazione, Statistiche, Stampa, Esporta** sono **fissi in basso** e restano visibili anche con una finestra aperta.
+- I tasti **Scout, Partita, Formazione, Statistiche, Stampa, Esporta** sono **fissi in basso** (**Scout** chiude le finestre e torna alla schermata dello scout) e restano visibili anche con una finestra aperta.
 - Lo schermo può essere **ruotato** (verticale e orizzontale). Se l'app era già installata, la rotazione può attivarsi solo dopo che Chrome aggiorna l'app (anche un giorno): per averla subito, disinstalla l'app e reinstallala.
 - Telefono e tablet con lo stesso account condividono i dati tramite il foglio Google: **Salva partita e invia** su uno, poi **Importa atlete** e **Richiama altra partita** sull'altro.
 - Su **iPad**: Safari → Condividi → Aggiungi alla schermata Home. L'app installata e Safari non condividono i dati e l'accesso Google può chiedere conferma più spesso.

@@ -198,6 +198,17 @@ html.tab .cancel{font-size:18px;padding:17px}
 html.tab .opts button{font-size:24px;padding:30px 8px}
 html.tab .opts.three button{font-size:20px;padding:26px 4px}
 html.tab .st{font-size:16px}html.tab .st th,html.tab .st td{padding:9px 4px}
+/* tablet: dimensioni in proporzione all'altezza dello schermo */
+html.tab .grid{gap:12px}
+html.tab .tile .pl{min-height:clamp(88px,13vh,150px)!important;padding:8px 12px!important}
+html.tab .tile .pl b,html.tab .cv .pl b{font-size:clamp(28px,4.2vh,46px);min-width:clamp(40px,5vh,56px)}
+html.tab .tile .pl span,html.tab .cv .pl span{font-size:clamp(15px,2.3vh,22px)}
+html.tab .tile .mini{flex:0 0 auto;min-height:clamp(52px,7.5vh,84px)}
+html.tab .mini button,html.tab .cv .mini button{min-height:clamp(52px,7.5vh,84px);font-size:clamp(14px,2vh,19px)}
+html.tab .pl.ph .av{width:clamp(48px,7vh,72px);height:clamp(48px,7vh,72px)}
+html.tab .opts button{padding:clamp(16px,3vh,30px) 8px;font-size:clamp(18px,2.8vh,26px)}
+html.tab .opts.three button{padding:clamp(14px,2.6vh,26px) 4px;font-size:clamp(16px,2.4vh,22px)}
+html.tab .panel{max-height:96%}
 </style></head><body>
 <header>
  <div style="display:flex;gap:6px"><button class="mi" id="mi" style="flex:1"></button><button class="mi" id="bView" style="padding:2px 12px"></button><button class="mi" id="bLeg" style="padding:2px 12px">?</button><button class="mi" id="bVis" style="padding:2px 12px">⚙</button><button class="mi" id="bGoo" style="padding:2px 10px">G</button><button class="mi" id="bMode" style="padding:2px 10px"></button><button id="bLock" style="display:none"></button></div>
@@ -227,7 +238,7 @@ html.tab .st{font-size:16px}html.tab .st th,html.tab .st td{padding:9px 4px}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -476,7 +487,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v25 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v26 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">

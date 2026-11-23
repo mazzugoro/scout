@@ -38,6 +38,7 @@ main{flex:1;overflow:auto;padding:0 10px 8px;display:flex;flex-direction:column;
 .opp button{padding:14px 6px;font-weight:700}
 .g{background:var(--okb);color:var(--ok);border-color:transparent}
 .r{background:var(--erb);color:var(--er);border-color:transparent}
+.or{background:#f97316;color:#fff;border-color:transparent;font-weight:600}
 .n{background:var(--ne)}
 .last{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mu);padding:4px 2px}
 .last div{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -204,7 +205,7 @@ nav{z-index:10}#rp{bottom:var(--navH,64px)}
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* Collegamento a Google Sheets con "Accedi con Google" (API Sheets/Drive, ambito drive.file) */
-const CLIENT_ID="1038164006936-fc11afhr926uijvkmkrr9mjeiph6rnt7.apps.googleusercontent.com";
+const CLIENT_ID="INSERISCI_QUI_IL_CLIENT_ID.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/drive.file";
 const ACT=(()=>{try{return localStorage.getItem("scoutActive")||"p1"}catch(e){return"p1"}})();
 const keyOf=id=>id==="p1"?"scoutS":"scoutS:"+id,sidOf=id=>id==="p1"?"scoutSheetId":"scoutSheetId:"+id;
@@ -229,8 +230,10 @@ function stopFrame(){try{document.open();document.write("<!doctype html><title>o
  if(p.get("access_token")&&(!st||p.get("state")===st)){TOK=p.get("access_token");TEXP=Date.now()+(+p.get("expires_in")||3600)*1000;saveTok();try{localStorage.setItem("scoutGoo","1")}catch(e){}
   if(String(p.get("state")||"").indexOf("tab-")===0&&!IN_FRAME){
    const back=location.origin+location.pathname.replace(/index\.html$/,"");
-   document.open();document.write('<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Google collegato</title></head><body style="font-family:sans-serif;text-align:center;padding:48px 20px"><h2>Google collegato ✓</h2><p>Torno all’app…</p><p><a href="'+back+'">Se non succede nulla, tocca qui</a></p></body></html>');document.close();
-   setTimeout(()=>{location.replace(back)},900);return}}
+   let sa=false;try{sa=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(e){}
+   if(sa){location.replace(back);return}
+   try{window.close()}catch(e){}
+   document.open();document.write('<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Google collegato</title></head><body style="font-family:sans-serif;text-align:center;padding:48px 20px;font-size:20px"><h2>Google collegato ✓</h2><p>Chiudi questa scheda (✕ in alto) e torna all’app Scout.</p></body></html>');document.close();return}}
  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
  if(IN_FRAME)stopFrame()})();
 const redirUri=()=>location.origin+location.pathname.replace(/index\.html$/,"");
@@ -461,7 +464,7 @@ function atlSetup(msg){
   claude.use("mcp").then(m=>syncAtleti(m)).catch(()=>{})}
 }
 function setupSheet(){
- open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v32 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
+ open(`<h2>Benvenuta/o! Configura la squadra</h2><div class="sm">Versione pagina: v33 (web, offline)</div><div class="sm">Lo chiedo una volta sola. Altre categorie si aggiungono dopo, in Partita.</div>
  <button class="g cancel" id="supGoo">${TOK?"Collegato a Google ✓":"Accedi con Google (consigliato)"}</button><div class="sm">Puoi anche provare l’app senza accedere e collegare Google più tardi (tasto G in alto o in Partita). Collegandolo, l’app crea da sola il foglio "Scout Panchina" nel tuo Drive.</div>
  <div class="sm">Nome squadra</div><input id="supSq" value="${E(S.squadra||profName())}" placeholder="es. VOLLEY ROMA">
  <div class="sm">Categoria</div><input id="supCat" value="${E(S.cat||"")}" placeholder="es. U18, 3DF, Serie D">
@@ -944,7 +947,7 @@ function fkFor(id){return fkFor0(id).filter(f=>vis("scout",f))}
 function fkFor0(id){const ps=S.pos[id];if(ps==="L")return["Difesa","Ricezione","Errore"];if(ps==="C1"||ps==="C2")return FK.filter(f=>f!=="Ricezione");return FK}
 function pickF(id){
  const p=pid(id);
- open(`<h2>${av(p)}#${p.num} ${p.n}</h2><div class="opts three">${fkFor(id).map(f=>`<button class="${(()=>{const d=F[f].filter(x=>x[1]!==0);return d.every(x=>x[1]>0)?"g up":d.every(x=>x[1]<0)?"r dn":""})()}" data-f="${f}" data-p="${id}">${f}</button>`).join("")}${S.pos[id]==="L"||!qv(4)?"":`<button class="r dn" data-qa="4" data-p="${id}">PASTE</button>`}<button data-sbq="${id}">⇄ Sostituzione</button></div><button class="cancel" data-x="1">Chiudi</button>`);
+ open(`<h2>${av(p)}#${p.num} ${p.n}</h2><div class="opts three">${fkFor(id).map(f=>`<button class="${(()=>{const d=F[f].filter(x=>x[1]!==0);return d.every(x=>x[1]>0)?"g up":d.every(x=>x[1]<0)?"r dn":""})()}" data-f="${f}" data-p="${id}">${f}</button>`).join("")}${S.pos[id]==="L"||!qv(4)?"":`<button class="r dn" data-qa="4" data-p="${id}">PASTE</button>`}<button class="or" data-sbq="${id}">⇄ Sostituzione</button></div><button class="cancel" data-x="1">Chiudi</button>`);
 }
 function pickE(id,f){
  const p=pid(id);let L=F[f].filter(x=>x[1]!==0&&vis("scout",f,x[0]));if(!L.length)L=F[f].filter(x=>x[1]!==0);

@@ -64,7 +64,8 @@ Google Cloud (Sheets e Drive API): nessun costo per questo uso. GitHub Pages e N
 3. Durante la partita: **tocca l'atleta → fondamentale → esito**. Nella finestra compaiono le azioni decisive; i tasti piccoli sotto l'atleta registrano le azioni non decisive (Ric ✓, Dif ✓, Att dif, Bat ✓).
 4. **Verde** = punto fatto, **rosso** = punto perso. **PASTE** = battuta sotto rete (errore di battuta). **Errore / Attacco Avversario** hanno i loro pulsanti.
 5. **Annulla** cancella l'ultima azione. I set vanno da 1 a 5 e il punteggio si calcola dalle azioni.
-6. Il tasto **?** apre la legenda con le spiegazioni; il tasto **⚙** sceglie quali **fondamentali ed esiti** mostrare durante lo scout.
+6. Nella finestra dell'atleta, il tasto **⇄ Sostituzione** apre l'elenco della panchina con **in cima le atlete dello stesso ruolo**: tocca chi entra e prende la posizione di chi esce.
+7. Il tasto **?** apre la legenda con le spiegazioni; il tasto **⚙** sceglie quali **fondamentali ed esiti** mostrare durante lo scout.
 
 ## B3. Foto delle atlete
 In **Formazione**, apri la scheda dell'atleta e scegli la **Foto** (galleria o fotocamera). Compare sopra il numero e il nome nello scout. La foto viene salvata anche nel foglio (colonna **Foto** di `Atleti`), quindi si ritrova su un altro telefono dopo **Importa atlete dal foglio Google**. Non modificare a mano la colonna Foto.
